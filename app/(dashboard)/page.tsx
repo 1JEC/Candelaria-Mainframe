@@ -1,24 +1,34 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { auditLog } from "@/drizzle/schema";
-import { count, desc, limit } from "drizzle-orm";
+import { auditLog, posts, leads, emails, agentRuns } from "@/drizzle/schema";
+import { count, desc, and, gt } from "drizzle-orm";
 
 export default async function DashboardPage() {
   const session = await auth();
 
-  // Get recent audit logs
-  const recentLogs = await db
+  // Get counts
+  const [logCount, postCount, leadCount, emailCount, agentCount] = await Promise.all([
+    db.select({ count: count() }).from(auditLog),
+    db.select({ count: count() }).from(posts),
+    db.select({ count: count() }).from(leads),
+    db.select({ count: count() }).from(emails),
+    db.select({ count: count() }).from(agentRuns),
+  ]);
+
+  // Get today's activity
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayLogs = await db
     .select()
     .from(auditLog)
+    .where(gt(auditLog.createdAt, today))
     .orderBy(desc(auditLog.createdAt))
-    .limit(5);
-
-  const logCount = await db.select({ count: count() }).from(auditLog);
+    .limit(10);
 
   return (
     <div>
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-12">
         <h1 className="text-4xl font-bold text-brand-black mb-2">
           Welkom, {session?.user?.name || session?.user?.email}
         </h1>
@@ -27,77 +37,86 @@ export default async function DashboardPage() {
         </p>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <StatCard
-          label="Audit Logs"
-          value={logCount[0]?.count || 0}
-          change="All-time"
-        />
-        <StatCard label="Posts" value={0} change="This week" />
-        <StatCard label="Leads" value={0} change="New" />
-        <StatCard label="Emails" value={0} change="Unread" />
+      {/* Key Metrics */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
+        <MetricCard label="Audit Logs" value={logCount[0]?.count || 0} icon="📋" />
+        <MetricCard label="Leads" value={leadCount[0]?.count || 0} icon="👥" />
+        <MetricCard label="Posts" value={postCount[0]?.count || 0} icon="📱" />
+        <MetricCard label="Emails" value={emailCount[0]?.count || 0} icon="📧" />
       </div>
 
-      {/* Module Status */}
-      <section className="mb-8">
-        <h2 className="text-2xl font-bold text-brand-black mb-4">
-          Module Status
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {/* Fase Progress */}
+      <section className="mb-12">
+        <h2 className="text-2xl font-bold text-brand-black mb-6">Fase Progress</h2>
+        <div className="space-y-3">
+          <FaseCard fase="0" title="Blueprint" status="✅ Complete" />
+          <FaseCard fase="1" title="Auth + Shell" status="✅ Complete" />
+          <FaseCard fase="2" title="Website Intake" status="✅ Complete" />
+          <FaseCard fase="3" title="Social Publisher" status="✅ Complete" />
+          <FaseCard fase="4" title="Mailbox" status="✅ Complete" />
+          <FaseCard fase="5" title="Prospecting" status="✅ Complete" />
+          <FaseCard fase="6" title="Dashboard & Polish" status="✅ Complete" />
+        </div>
+      </section>
+
+      {/* Modules */}
+      <section className="mb-12">
+        <h2 className="text-2xl font-bold text-brand-black mb-6">Modules</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <ModuleCard
             name="Social Publisher"
-            status="Coming in Fase 3"
+            posts={postCount[0]?.count || 0}
             icon="📱"
           />
           <ModuleCard
-            name="Website Intake"
-            status="Coming in Fase 2"
-            icon="📋"
-          />
-          <ModuleCard name="Mailbox" status="Coming in Fase 4" icon="📧" />
-          <ModuleCard
             name="Lead Engine"
-            status="Coming in Fase 5"
-            icon="🎯"
+            posts={leadCount[0]?.count || 0}
+            icon="👥"
           />
-          <ModuleCard name="Dashboard" status="Coming in Fase 6" icon="📊" />
           <ModuleCard
-            name="Settings"
-            status="Active (Fase 1) ✓"
-            icon="⚙️"
-            active
+            name="Mailbox"
+            posts={emailCount[0]?.count || 0}
+            icon="📧"
           />
+        </div>
+      </section>
+
+      {/* Agent Activity */}
+      <section className="mb-12">
+        <h2 className="text-2xl font-bold text-brand-black mb-4">AI Agents</h2>
+        <div className="p-6 bg-white border border-gray-200 rounded-lg">
+          <p className="text-gray-700 mb-2">
+            <strong>Total Runs:</strong> {agentCount[0]?.count || 0}
+          </p>
+          <p className="text-sm text-gray-600">
+            Agents: content-generator, email-triage, prospector
+          </p>
         </div>
       </section>
 
       {/* Recent Activity */}
       <section>
-        <h2 className="text-2xl font-bold text-brand-black mb-4">
-          Recent Activity
-        </h2>
-        {recentLogs.length > 0 ? (
+        <h2 className="text-2xl font-bold text-brand-black mb-4">Today's Activity</h2>
+        {todayLogs.length > 0 ? (
           <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
                     <th className="px-6 py-3 text-left font-semibold">Action</th>
-                    <th className="px-6 py-3 text-left font-semibold">
-                      Resource
-                    </th>
+                    <th className="px-6 py-3 text-left font-semibold">Resource</th>
                     <th className="px-6 py-3 text-left font-semibold">Time</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {recentLogs.map((log) => (
+                  {todayLogs.map((log) => (
                     <tr key={log.id} className="border-b border-gray-200">
                       <td className="px-6 py-3 font-medium">{log.action}</td>
                       <td className="px-6 py-3 text-gray-600">
                         {log.resourceType}
                       </td>
-                      <td className="px-6 py-3 text-gray-500 text-xs">
-                        {new Date(log.createdAt).toLocaleString("nl-NL")}
+                      <td className="px-6 py-3 text-xs text-gray-500">
+                        {new Date(log.createdAt).toLocaleTimeString("nl-NL")}
                       </td>
                     </tr>
                   ))}
@@ -106,53 +125,69 @@ export default async function DashboardPage() {
             </div>
           </div>
         ) : (
-          <p className="text-gray-600">Geen recente activiteit.</p>
+          <p className="text-gray-600">Geen activiteit vandaag.</p>
         )}
       </section>
     </div>
   );
 }
 
-function StatCard({
+function MetricCard({
   label,
   value,
-  change,
+  icon,
 }: {
   label: string;
   value: number;
-  change: string;
+  icon: string;
 }) {
   return (
     <div className="p-6 bg-white border-l-4 border-brand-green rounded-lg">
-      <p className="text-gray-600 text-sm mb-1">{label}</p>
-      <p className="text-3xl font-bold text-brand-black">{value}</p>
-      <p className="text-xs text-gray-500 mt-2">{change}</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-gray-600 text-sm mb-1">{label}</p>
+          <p className="text-3xl font-bold text-brand-black">{value}</p>
+        </div>
+        <div className="text-3xl">{icon}</div>
+      </div>
+    </div>
+  );
+}
+
+function FaseCard({
+  fase,
+  title,
+  status,
+}: {
+  fase: string;
+  title: string;
+  status: string;
+}) {
+  return (
+    <div className="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg">
+      <div>
+        <p className="font-semibold text-gray-900">Fase {fase}: {title}</p>
+      </div>
+      <div className="text-green-600 font-medium">{status}</div>
     </div>
   );
 }
 
 function ModuleCard({
   name,
-  status,
+  posts,
   icon,
-  active = false,
 }: {
   name: string;
-  status: string;
+  posts: number;
   icon: string;
-  active?: boolean;
 }) {
   return (
-    <div
-      className={`p-4 rounded-lg border-2 transition ${
-        active
-          ? "bg-brand-green/10 border-brand-green"
-          : "border-gray-200 hover:border-brand-green"
-      }`}
-    >
-      <div className="text-2xl mb-2">{icon}</div>
-      <h3 className="font-semibold text-brand-black mb-1">{name}</h3>
-      <p className="text-sm text-gray-600">{status}</p>
+    <div className="p-6 bg-white border border-gray-200 rounded-lg">
+      <div className="text-3xl mb-3">{icon}</div>
+      <h3 className="font-semibold text-gray-900 mb-1">{name}</h3>
+      <p className="text-2xl font-bold text-brand-green">{posts}</p>
+      <p className="text-xs text-gray-500 mt-2">Items in system</p>
     </div>
   );
 }

@@ -1,11 +1,106 @@
-export default function AuditPage() {
+import { db } from "@/lib/db";
+import { auditLog, users } from "@/drizzle/schema";
+import { desc, count } from "drizzle-orm";
+
+export default async function AuditLogPage() {
+  const logs = await db
+    .select()
+    .from(auditLog)
+    .orderBy(desc(auditLog.createdAt))
+    .limit(100);
+
+  const logCount = await db.select({ count: count() }).from(auditLog);
+
+  // Group logs by action
+  const actionCounts = logs.reduce(
+    (acc, log) => {
+      acc[log.action] = (acc[log.action] || 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>
+  );
+
   return (
     <div>
-      <h1 className="text-3xl font-bold text-brand-black mb-2">Audit Log</h1>
-      <p className="text-gray-600 mb-8">Full activity coming in Fase 6</p>
-      <div className="p-8 bg-gray-50 rounded-lg border-2 border-dashed border-brand-green text-center">
-        <p className="text-lg text-gray-600">📋 Complete system audit trail and analytics</p>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-brand-black">Audit Log</h1>
+        <p className="text-gray-600">Complete activity trail ({logCount[0]?.count || 0} entries)</p>
       </div>
+
+      {/* Summary */}
+      <div className="grid grid-cols-4 gap-4 mb-8">
+        <StatCard label="Total Entries" value={logCount[0]?.count || 0} />
+        <StatCard label="Today" value={logs.filter(l => {
+          const today = new Date();
+          const logDate = new Date(l.createdAt);
+          return logDate.toDateString() === today.toDateString();
+        }).length} />
+        <StatCard label="Unique Actions" value={Object.keys(actionCounts).length} />
+        <StatCard label="Unique Users" value={new Set(logs.map(l => l.userId)).size} />
+      </div>
+
+      {/* Top Actions */}
+      <div className="mb-8 p-6 bg-white border border-gray-200 rounded-lg">
+        <h2 className="text-lg font-semibold mb-4">Top Actions</h2>
+        <div className="space-y-2">
+          {Object.entries(actionCounts)
+            .sort(([, a], [, b]) => b - a)
+            .slice(0, 5)
+            .map(([action, count]) => (
+              <div key={action} className="flex justify-between">
+                <span className="text-gray-700">{action}</span>
+                <span className="font-semibold">{count}</span>
+              </div>
+            ))}
+        </div>
+      </div>
+
+      {/* Full Log */}
+      {logs.length > 0 ? (
+        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-6 py-3 text-left font-semibold">Action</th>
+                  <th className="px-6 py-3 text-left font-semibold">Resource</th>
+                  <th className="px-6 py-3 text-left font-semibold">User</th>
+                  <th className="px-6 py-3 text-left font-semibold">IP</th>
+                  <th className="px-6 py-3 text-left font-semibold">Time</th>
+                </tr>
+              </thead>
+              <tbody>
+                {logs.map((log) => (
+                  <tr key={log.id} className="border-b border-gray-200 hover:bg-gray-50">
+                    <td className="px-6 py-3 font-medium">{log.action}</td>
+                    <td className="px-6 py-3 text-gray-600">
+                      {log.resourceType}
+                    </td>
+                    <td className="px-6 py-3 text-xs">{log.userId || "system"}</td>
+                    <td className="px-6 py-3 text-xs text-gray-500">{log.ip}</td>
+                    <td className="px-6 py-3 text-xs text-gray-500">
+                      {new Date(log.createdAt).toLocaleString("nl-NL")}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : (
+        <div className="p-8 bg-gray-50 rounded-lg border border-dashed border-gray-300 text-center">
+          <p className="text-gray-600">Geen audit log entries nog.</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StatCard({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="p-4 bg-white border border-gray-200 rounded-lg">
+      <p className="text-gray-600 text-sm mb-1">{label}</p>
+      <p className="text-2xl font-bold text-brand-black">{value}</p>
     </div>
   );
 }

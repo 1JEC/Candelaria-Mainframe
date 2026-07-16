@@ -7,45 +7,49 @@ The Mainframe HQ portal is now ready for production deployment on Netlify with a
 
 ✅ **Production Build** - Fully optimized Next.js build  
 ✅ **Premium UI** - Professional sidebar navigation and dashboard  
-✅ **Database Integration** - Postgres via Vercel  
+✅ **Database Integration** - Optional Postgres via Vercel  
 ✅ **Authentication** - NextAuth v4 with JWT  
 ✅ **API Routes** - All endpoints configured  
 ✅ **Netlify Config** - `netlify.toml` created  
+✅ **MVP Mode** - Works without database (demo data fallback)  
 
-## Quick Start — Deploy to Netlify
+## 🚀 Quick Start (5 Minutes)
 
-### Step 1: Push to GitHub
+**See detailed setup guide:** [NETLIFY_SETUP.md](./NETLIFY_SETUP.md)
+
+### Step 1: Generate Secret
 ```bash
-cd /Users/jcandelaria/mainframe-hq
-
-# Initialize git if not already done
-git init
-git add .
-git commit -m "Deploy premium Mainframe HQ portal to production"
-git remote add origin https://github.com/yourusername/mainframe-hq
-git branch -M main
-git push -u origin main
+openssl rand -base64 32
 ```
+Save this value for Step 3.
 
 ### Step 2: Connect to Netlify
-1. Go to [Netlify](https://netlify.com)
-2. Click **"New site from Git"**
-3. Connect your GitHub repository
-4. Select the `mainframe-hq` repo
+1. Go to [Netlify](https://netlify.com) and sign in
+2. Click **"Add new site"** → **"Import an existing project"**
+3. Select **GitHub** and authorize
+4. Select repository: `Candelaria-Mainframe`
+5. Click **Deploy** (this will fail - expected!)
 
-### Step 3: Configure Environment Variables
-In the Netlify dashboard, go to **Site settings → Build & deploy → Environment**
-
-Add these variables:
+### Step 3: Add Environment Variables
+In Netlify dashboard:
+1. Go to **Site settings** → **Build & deploy** → **Environment**
+2. Click **"Edit variables"**
+3. Add these **required** variables:
 ```
-NEXTAUTH_SECRET = your-secret-key-here
+NEXTAUTH_SECRET = [paste the secret from Step 1]
 NEXTAUTH_URL = https://your-site.netlify.app
-DATABASE_URL = your-postgres-connection-string
-RESEND_API_KEY = your-resend-key
+NODE_ENV = production
 ```
 
-### Step 4: Deploy
-The site will automatically deploy when you push to the `main` branch.
+4. (Optional) Add database connection:
+```
+DATABASE_URL = postgresql://user:password@host/database
+```
+
+### Step 4: Trigger Rebuild
+1. In Netlify: **Deploys** → **Trigger deploy** → **Deploy site**
+2. Wait for build to complete
+3. Your site is now live! 🎉
 
 ## Environment Setup
 

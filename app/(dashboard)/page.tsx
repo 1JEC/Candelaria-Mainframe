@@ -3,8 +3,15 @@ import { posts } from "@/drizzle/schema";
 import { count } from "drizzle-orm";
 
 export default async function DashboardPage() {
-  // Get counts
-  const [postCount] = await Promise.all([db.select({ count: count() }).from(posts)]);
+  // Get counts - fallback if DB unavailable
+  let postCount = 0;
+  try {
+    const result = await db.select({ count: count() }).from(posts);
+    postCount = result[0]?.count || 0;
+  } catch (error) {
+    // Database not available (common in preview/MVP mode)
+    console.log("Database unavailable, using demo data");
+  }
 
   const totalReach = 628400;
   const engagement = "5.2%";
@@ -74,7 +81,7 @@ export default async function DashboardPage() {
       {/* RECENT POSTS */}
       <section className="space-y-4">
         <div className="flex items-center justify-between">
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">RECENT POSTS • {postCount[0]?.count || 0} published • 4 scheduled</p>
+          <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">RECENT POSTS • {postCount} published • 4 scheduled</p>
           <button className="text-xs text-gray-600 hover:text-gray-900">Full report →</button>
         </div>
 

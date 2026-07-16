@@ -11,17 +11,19 @@ export default async function DashboardPage() {
   const newFollowers = "3.940";
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-1">Social</h1>
-        <p className="text-gray-600 text-sm">
-          5 accounts publishing on schedule across 4 platforms. <span className="font-semibold">The agent ships it.</span> You approve the queue.
-        </p>
-      </div>
+    <div className="grid grid-cols-3 gap-8">
+      {/* Main Content - 2 columns */}
+      <div className="col-span-2 space-y-8">
+        {/* Header */}
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-1">Social</h1>
+          <p className="text-gray-600 text-sm">
+            5 accounts publishing on schedule across 4 platforms. <span className="font-semibold">The agent ships it.</span> You approve the queue.
+          </p>
+        </div>
 
-      {/* BROADCAST - LAST 7 DAYS */}
-      <section className="space-y-6">
+        {/* BROADCAST - LAST 7 DAYS */}
+        <section className="space-y-6">
         <div className="space-y-3">
           <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">BROADCAST • LAST 7 DAYS</p>
 
@@ -125,6 +127,55 @@ export default async function DashboardPage() {
           </div>
         </div>
       </section>
+      </div>
+
+      {/* Hero Panel - Right Sidebar */}
+      <div className="col-span-1">
+        <div className="sticky top-20 p-6 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-2xl overflow-hidden h-96">
+          {/* Hero Image Placeholder with gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent opacity-60"></div>
+          <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width=%22100%22%20height=%22100%22%20xmlns=%22http://www.w3.org/2000/svg%22%3E%3Crect%20width=%22100%22%20height=%22100%22%20fill=%22%231a7f3f%22%20opacity=%220.1%22/%3E%3Ccircle%20cx=%2250%22%20cy=%2250%22%20r=%2230%22%20fill=%22none%22%20stroke=%22%231a7f3f%22%20stroke-width=%221%22%20opacity=%220.2%22/%3E%3C/svg%3E')] opacity-20"></div>
+
+          <div className="relative h-full flex flex-col justify-between">
+            {/* Top section with icon */}
+            <div>
+              <div className="text-5xl mb-3">📊</div>
+              <h3 className="text-lg font-bold text-white">Mission Control</h3>
+            </div>
+
+            {/* Bottom section with stats */}
+            <div className="space-y-4">
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
+                <p className="text-xs text-gray-300 uppercase tracking-wider mb-1">Active Campaigns</p>
+                <p className="text-2xl font-bold text-white">5</p>
+              </div>
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
+                <p className="text-xs text-gray-300 uppercase tracking-wider mb-1">Next Review</p>
+                <p className="text-sm text-gray-200">In 4 hours</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Secondary Card */}
+        <div className="mt-6 p-6 bg-white border border-gray-100 rounded-2xl">
+          <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Quick Stats</p>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Pending Approvals</span>
+              <span className="text-lg font-bold text-gray-900">2</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Scheduled Posts</span>
+              <span className="text-lg font-bold text-gray-900">4</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Response Rate</span>
+              <span className="text-lg font-bold text-green-600">94%</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

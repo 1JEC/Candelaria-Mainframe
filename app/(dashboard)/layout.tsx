@@ -15,12 +15,12 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="flex flex-col h-screen bg-brand-white">
-      <Navbar session={session} />
-      <div className="flex flex-1 overflow-hidden">
-        <Sidebar />
+    <div className="min-h-screen bg-gray-50">
+      <Sidebar />
+      <div className="ml-64 flex flex-col min-h-screen">
+        <Navbar session={session} />
         <main className="flex-1 overflow-y-auto">
-          <div className="p-6 md:p-8">{children}</div>
+          <div className="p-8 max-w-7xl">{children}</div>
         </main>
       </div>
     </div>

@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { posts, postVersions } from "@/drizzle/schema";
+import { posts } from "@/drizzle/schema";
 import { desc, count } from "drizzle-orm";
 import Link from "next/link";
 
@@ -67,7 +67,7 @@ export default async function PostsPage() {
                       </span>
                     </td>
                     <td className="px-6 py-3 text-xs text-gray-500">
-                      {new Date(post.createdAt).toLocaleDateString("nl-NL")}
+                      {post.createdAt ? new Date(post.createdAt).toLocaleDateString("nl-NL") : "—"}
                     </td>
                   </tr>
                 ))}

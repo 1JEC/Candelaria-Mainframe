@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 import { logAudit } from "@/lib/audit";
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = new Resend(process.env.RESEND_API_KEY || "demo-key");
 const INTAKE_SECRET = process.env.INTAKE_API_KEY || "changeme";
 
 export async function POST(req: NextRequest) {

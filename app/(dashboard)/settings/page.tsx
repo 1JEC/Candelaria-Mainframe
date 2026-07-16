@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { users, settings as settingsTable } from "@/drizzle/schema";
+import { users } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 
@@ -13,10 +13,6 @@ export default async function SettingsPage() {
 
   const user = await db.query.users.findFirst({
     where: eq(users.id, session.user.id),
-  });
-
-  const settings = await db.query.settings.findFirst({
-    where: eq(settingsTable.userId, session.user.id),
   });
 
   return (

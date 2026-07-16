@@ -1,193 +1,192 @@
-import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { auditLog, posts, leads, emails, agentRuns } from "@/drizzle/schema";
-import { count, desc, and, gt } from "drizzle-orm";
+import { posts } from "@/drizzle/schema";
+import { count } from "drizzle-orm";
 
 export default async function DashboardPage() {
-  const session = await auth();
-
   // Get counts
-  const [logCount, postCount, leadCount, emailCount, agentCount] = await Promise.all([
-    db.select({ count: count() }).from(auditLog),
-    db.select({ count: count() }).from(posts),
-    db.select({ count: count() }).from(leads),
-    db.select({ count: count() }).from(emails),
-    db.select({ count: count() }).from(agentRuns),
-  ]);
+  const [postCount] = await Promise.all([db.select({ count: count() }).from(posts)]);
 
-  // Get today's activity
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const todayLogs = await db
-    .select()
-    .from(auditLog)
-    .where(gt(auditLog.createdAt, today))
-    .orderBy(desc(auditLog.createdAt))
-    .limit(10);
+  const totalReach = 628400;
+  const engagement = "5.2%";
+  const newFollowers = "3.940";
 
   return (
-    <div>
+    <div className="space-y-8">
       {/* Header */}
-      <div className="mb-12">
-        <h1 className="text-4xl font-bold text-brand-black mb-2">
-          Welkom, {session?.user?.name || session?.user?.email}
-        </h1>
-        <p className="text-gray-600">
-          Mainframe HQ — Internal Operations Portal
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900 mb-1">Social</h1>
+        <p className="text-gray-600 text-sm">
+          5 accounts publishing on schedule across 4 platforms. <span className="font-semibold">The agent ships it.</span> You approve the queue.
         </p>
       </div>
 
-      {/* Key Metrics */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
-        <MetricCard label="Audit Logs" value={logCount[0]?.count || 0} icon="📋" />
-        <MetricCard label="Leads" value={leadCount[0]?.count || 0} icon="👥" />
-        <MetricCard label="Posts" value={postCount[0]?.count || 0} icon="📱" />
-        <MetricCard label="Emails" value={emailCount[0]?.count || 0} icon="📧" />
-      </div>
-
-      {/* Fase Progress */}
-      <section className="mb-12">
-        <h2 className="text-2xl font-bold text-brand-black mb-6">Fase Progress</h2>
+      {/* BROADCAST - LAST 7 DAYS */}
+      <section className="space-y-6">
         <div className="space-y-3">
-          <FaseCard fase="0" title="Blueprint" status="✅ Complete" />
-          <FaseCard fase="1" title="Auth + Shell" status="✅ Complete" />
-          <FaseCard fase="2" title="Website Intake" status="✅ Complete" />
-          <FaseCard fase="3" title="Social Publisher" status="✅ Complete" />
-          <FaseCard fase="4" title="Mailbox" status="✅ Complete" />
-          <FaseCard fase="5" title="Prospecting" status="✅ Complete" />
-          <FaseCard fase="6" title="Dashboard & Polish" status="✅ Complete" />
-        </div>
-      </section>
+          <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">BROADCAST • LAST 7 DAYS</p>
 
-      {/* Modules */}
-      <section className="mb-12">
-        <h2 className="text-2xl font-bold text-brand-black mb-6">Modules</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <ModuleCard
-            name="Social Publisher"
-            posts={postCount[0]?.count || 0}
-            icon="📱"
-          />
-          <ModuleCard
-            name="Lead Engine"
-            posts={leadCount[0]?.count || 0}
-            icon="👥"
-          />
-          <ModuleCard
-            name="Mailbox"
-            posts={emailCount[0]?.count || 0}
-            icon="📧"
-          />
-        </div>
-      </section>
+          {/* Large Metrics */}
+          <div className="grid grid-cols-3 gap-4">
+            <div className="p-6 bg-white border border-gray-100 rounded-2xl">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">TOTAL REACH</p>
+                  <p className="text-4xl font-bold text-gray-900">{(totalReach / 1000).toFixed(0)}k</p>
+                </div>
+                <div className="text-2xl">📊</div>
+              </div>
+              <p className="text-xs text-gray-600">Across 12 posts • +14% wk/wk</p>
+            </div>
 
-      {/* Agent Activity */}
-      <section className="mb-12">
-        <h2 className="text-2xl font-bold text-brand-black mb-4">AI Agents</h2>
-        <div className="p-6 bg-white border border-gray-200 rounded-lg">
-          <p className="text-gray-700 mb-2">
-            <strong>Total Runs:</strong> {agentCount[0]?.count || 0}
-          </p>
-          <p className="text-sm text-gray-600">
-            Agents: content-generator, email-triage, prospector
-          </p>
-        </div>
-      </section>
+            <div className="p-6 bg-white border border-gray-100 rounded-2xl">
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">ENGAGEMENT</p>
+                <p className="text-3xl font-bold text-gray-900">{engagement}</p>
+                <p className="text-xs text-green-600">↑ 1.8% avg wk/wk</p>
+              </div>
+              <p className="text-xs text-gray-600 mt-4">The content-machine drafted 9 of 12 posts this week. Avg engagement held at 5.2%, well above the 3.1% category line.</p>
+            </div>
 
-      {/* Recent Activity */}
-      <section>
-        <h2 className="text-2xl font-bold text-brand-black mb-4">Today's Activity</h2>
-        {todayLogs.length > 0 ? (
-          <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="px-6 py-3 text-left font-semibold">Action</th>
-                    <th className="px-6 py-3 text-left font-semibold">Resource</th>
-                    <th className="px-6 py-3 text-left font-semibold">Time</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {todayLogs.map((log) => (
-                    <tr key={log.id} className="border-b border-gray-200">
-                      <td className="px-6 py-3 font-medium">{log.action}</td>
-                      <td className="px-6 py-3 text-gray-600">
-                        {log.resourceType}
-                      </td>
-                      <td className="px-6 py-3 text-xs text-gray-500">
-                        {new Date(log.createdAt).toLocaleTimeString("nl-NL")}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="p-6 bg-white border border-gray-100 rounded-2xl">
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">NET NEW FOLLOWERS</p>
+                <p className="text-3xl font-bold text-gray-900">{newFollowers}</p>
+                <p className="text-xs text-green-600">↑ +1.3% vs prior 7d</p>
+              </div>
             </div>
           </div>
-        ) : (
-          <p className="text-gray-600">Geen activiteit vandaag.</p>
-        )}
+        </div>
+
+        {/* Platform Cards */}
+        <div className="grid grid-cols-4 gap-4">
+          <PlatformCard platform="Instagram" followers="236K" engagement="4.8% ER" icon="📸" />
+          <PlatformCard platform="LinkedIn" followers="54K" engagement="3.2% ER" icon="💼" />
+          <PlatformCard platform="YouTube" followers="312K" engagement="6.7% ER" icon="▶️" />
+          <div className="p-6 bg-white border border-gray-100 rounded-2xl">
+            <p className="text-xs text-gray-500 mb-3">Now publishing</p>
+            <p className="text-sm text-gray-700">POV: your gym bottle holds 2 litres — <span className="text-gray-400">@forgewaters</span></p>
+          </div>
+        </div>
+      </section>
+
+      {/* RECENT POSTS */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">RECENT POSTS • {postCount[0]?.count || 0} published • 4 scheduled</p>
+          <button className="text-xs text-gray-600 hover:text-gray-900">Full report →</button>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <RecentPost
+            title="The 3am restock run that broke our DMs"
+            engagement="184K views • 12.4K likes"
+            platform="@forgewaters • Instagram • posted 2d ago"
+            badge="TOP POST • 70"
+            badgeColor="orange"
+          />
+          <div className="p-6 bg-white border border-gray-100 rounded-2xl flex flex-col justify-between">
+            <div>
+              <p className="text-xs text-gray-500 mb-4">
+                <span className="inline-block bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs mr-2">All</span>
+                <span className="inline-block bg-green-100 text-green-700 px-2 py-1 rounded text-xs mr-2">Published</span>
+                <span className="inline-block bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs">Scheduled</span>
+              </p>
+            </div>
+            <input
+              type="text"
+              placeholder="Filter posts, captions, channel..."
+              className="px-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none"
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* ENGAGEMENT TREND */}
+      <section className="grid grid-cols-2 gap-4">
+        <div className="p-6 bg-white border border-gray-100 rounded-2xl">
+          <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">ENGAGEMENT TREND • 12 WEEKS</p>
+          <div className="h-24 bg-gray-50 rounded-lg border border-gray-100 flex items-end justify-between p-4">
+            <div className="h-1/3 w-2 bg-gray-300 rounded"></div>
+            <div className="h-1/2 w-2 bg-gray-300 rounded"></div>
+            <div className="h-2/3 w-2 bg-gray-300 rounded"></div>
+            <div className="h-3/4 w-2 bg-gray-300 rounded"></div>
+            <div className="h-5/6 w-2 bg-gray-300 rounded"></div>
+            <div className="h-full w-2 bg-green-400 rounded"></div>
+          </div>
+          <p className="text-xs text-gray-500 mt-3">5.2% avg • +0.8pp wk/wk ↑</p>
+        </div>
+
+        <div className="p-6 bg-white border border-gray-100 rounded-2xl">
+          <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">KEY METRICS</p>
+          <div className="space-y-3">
+            <MetricRow label="Impressions" value="184K" change="+12.4K" />
+            <MetricRow label="Clicks" value="342" change="+8.9%" />
+            <MetricRow label="Shares" value="67" change="+3.2%" />
+          </div>
+        </div>
       </section>
     </div>
   );
 }
 
-function MetricCard({
-  label,
-  value,
+function PlatformCard({
+  platform,
+  followers,
+  engagement,
   icon,
 }: {
-  label: string;
-  value: number;
+  platform: string;
+  followers: string;
+  engagement: string;
   icon: string;
 }) {
   return (
-    <div className="p-6 bg-white border-l-4 border-brand-green rounded-lg">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-gray-600 text-sm mb-1">{label}</p>
-          <p className="text-3xl font-bold text-brand-black">{value}</p>
-        </div>
-        <div className="text-3xl">{icon}</div>
-      </div>
+    <div className="p-6 bg-white border border-gray-100 rounded-2xl">
+      <p className="text-lg mb-3">{icon}</p>
+      <p className="text-xs text-gray-500 mb-2 font-semibold uppercase">{platform}</p>
+      <p className="text-2xl font-bold text-gray-900 mb-1">{followers}</p>
+      <p className="text-xs text-green-600">{engagement}</p>
     </div>
   );
 }
 
-function FaseCard({
-  fase,
+function RecentPost({
   title,
-  status,
+  engagement,
+  platform,
+  badge,
+  badgeColor,
 }: {
-  fase: string;
   title: string;
-  status: string;
+  engagement: string;
+  platform: string;
+  badge: string;
+  badgeColor: "orange" | "green" | "blue";
 }) {
+  const badgeClasses = {
+    orange: "bg-orange-100 text-orange-700",
+    green: "bg-green-100 text-green-700",
+    blue: "bg-blue-100 text-blue-700",
+  };
+
   return (
-    <div className="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg">
-      <div>
-        <p className="font-semibold text-gray-900">Fase {fase}: {title}</p>
-      </div>
-      <div className="text-green-600 font-medium">{status}</div>
+    <div className="p-6 bg-white border border-gray-100 rounded-2xl border-l-4 border-l-orange-400">
+      <p className={`text-xs font-bold ${badgeClasses[badgeColor]} px-2 py-1 rounded inline-block mb-3`}>{badge}</p>
+      <p className="font-semibold text-gray-900 mb-3 text-sm">{title}</p>
+      <p className="text-sm font-medium text-gray-900 mb-2">{engagement}</p>
+      <p className="text-xs text-gray-600">{platform}</p>
     </div>
   );
 }
 
-function ModuleCard({
-  name,
-  posts,
-  icon,
-}: {
-  name: string;
-  posts: number;
-  icon: string;
-}) {
+function MetricRow({ label, value, change }: { label: string; value: string; change: string }) {
   return (
-    <div className="p-6 bg-white border border-gray-200 rounded-lg">
-      <div className="text-3xl mb-3">{icon}</div>
-      <h3 className="font-semibold text-gray-900 mb-1">{name}</h3>
-      <p className="text-2xl font-bold text-brand-green">{posts}</p>
-      <p className="text-xs text-gray-500 mt-2">Items in system</p>
+    <div className="flex items-center justify-between">
+      <p className="text-sm text-gray-600">{label}</p>
+      <div className="text-right">
+        <p className="text-sm font-bold text-gray-900">{value}</p>
+        <p className="text-xs text-green-600">{change}</p>
+      </div>
     </div>
   );
 }

@@ -3,48 +3,41 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const modules = [
+const navSections = [
   {
-    name: "Dashboard",
-    path: "/dashboard",
-    icon: "📊",
-    status: "active",
+    section: "COMMAND",
+    items: [
+      { name: "Dashboard", path: "/dashboard", icon: "📊" },
+      { name: "Tasks", path: "/posts", icon: "✓" },
+      { name: "Calendar", path: "/leads", icon: "📅" },
+      { name: "Routines", path: "/inbox", icon: "🔄" },
+    ],
   },
   {
-    name: "Social Publisher",
-    path: "/dashboard/posts",
-    icon: "📱",
-    status: "fase-3",
+    section: "GROWTH",
+    items: [
+      { name: "Agents", path: "/outreach", icon: "🤖" },
+      { name: "Chats", path: "/audit-log", icon: "💬" },
+      { name: "Sessions", path: "/settings", icon: "👤" },
+      { name: "Skills", path: "/", icon: "⭐" },
+    ],
   },
   {
-    name: "Website Intake",
-    path: "/dashboard/leads",
-    icon: "📋",
-    status: "fase-2",
+    section: "GROWTH",
+    items: [
+      { name: "Revenue", path: "/", icon: "💰" },
+      { name: "Analytics", path: "/", icon: "📈" },
+      { name: "Competitors", path: "/", icon: "🎯" },
+      { name: "Social", path: "/", icon: "📱" },
+    ],
   },
   {
-    name: "Mailbox",
-    path: "/dashboard/inbox",
-    icon: "📧",
-    status: "fase-4",
-  },
-  {
-    name: "Lead Engine",
-    path: "/dashboard/outreach",
-    icon: "🎯",
-    status: "fase-5",
-  },
-  {
-    name: "Audit Log",
-    path: "/dashboard/audit-log",
-    icon: "📋",
-    status: "fase-6",
-  },
-  {
-    name: "Settings",
-    path: "/dashboard/settings",
-    icon: "⚙️",
-    status: "active",
+    section: "INTELLIGENCE",
+    items: [
+      { name: "Braindump", path: "/", icon: "🧠" },
+      { name: "Mind", path: "/", icon: "💡" },
+      { name: "Activity", path: "/", icon: "📊" },
+    ],
   },
 ];
 
@@ -52,41 +45,47 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="hidden md:flex flex-col w-64 bg-gray-50 border-r border-gray-200 min-h-screen">
-      <nav className="flex-1 p-4 space-y-2">
-        {modules.map((module) => {
-          const isActive =
-            pathname === module.path ||
-            (module.path === "/dashboard" && pathname === "/dashboard");
-
-          return (
-            <div key={module.path}>
-              <Link
-                href={module.path}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition ${
-                  isActive
-                    ? "bg-brand-green text-brand-white font-semibold"
-                    : "text-gray-700 hover:bg-gray-100"
-                }`}
-              >
-                <span className="text-lg">{module.icon}</span>
-                <span className="flex-1">{module.name}</span>
-                {module.status !== "active" && (
-                  <span className="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded">
-                    {module.status}
-                  </span>
-                )}
-              </Link>
-            </div>
-          );
-        })}
-      </nav>
-
-      {/* Footer */}
-      <div className="p-4 border-t border-gray-200 text-xs text-gray-500">
-        <p>Mainframe HQ</p>
-        <p>Fase 1: Fundament ✓</p>
+    <aside className="hidden md:flex flex-col w-64 bg-white border-r border-gray-100 min-h-screen fixed left-0 top-0">
+      {/* Logo */}
+      <div className="p-6 border-b border-gray-100">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="text-2xl font-bold">∞</div>
+          <div>
+            <p className="text-sm font-bold text-gray-900">187N</p>
+            <p className="text-xs text-gray-400">Mission Control</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 mt-4">
+          <div className="w-2 h-2 rounded-full bg-green-500"></div>
+          <span className="text-xs font-semibold text-green-600">ONLINE</span>
+        </div>
       </div>
+
+      {/* Navigation */}
+      <nav className="flex-1 px-4 py-6 space-y-8 overflow-y-auto">
+        {navSections.map((section, idx) => (
+          <div key={idx}>
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 px-2">{section.section}</p>
+            <div className="space-y-1">
+              {section.items.map((item) => {
+                const isActive = pathname === item.path || pathname.startsWith(item.path);
+                return (
+                  <Link
+                    key={item.path}
+                    href={item.path}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all ${
+                      isActive ? "bg-gray-100 text-gray-900 font-medium" : "text-gray-600 hover:bg-gray-50"
+                    }`}
+                  >
+                    <span className="text-base">{item.icon}</span>
+                    <span>{item.name}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </nav>
     </aside>
   );
 }

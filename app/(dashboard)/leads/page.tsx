@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { leads, leadEvents } from "@/drizzle/schema";
+import { leads } from "@/drizzle/schema";
 import { desc, count } from "drizzle-orm";
 import Link from "next/link";
 

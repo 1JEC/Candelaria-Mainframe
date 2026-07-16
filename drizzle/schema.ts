@@ -7,7 +7,6 @@ import {
   jsonb,
   unique,
   index,
-  serial,
   varchar,
   decimal,
 } from "drizzle-orm/pg-core";

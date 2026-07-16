@@ -52,7 +52,7 @@ export default async function InboxPage() {
                       {email.aiTriagePriority ? `P${email.aiTriagePriority}` : "—"}
                     </td>
                     <td className="px-6 py-3 text-xs text-gray-500">
-                      {new Date(email.createdAt).toLocaleDateString("nl-NL")}
+                      {email.createdAt ? new Date(email.createdAt).toLocaleDateString("nl-NL") : "—"}
                     </td>
                   </tr>
                 ))}

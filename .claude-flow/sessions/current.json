@@ -1,0 +1,12 @@
+{
+  "id": "session-1784238445395",
+  "startedAt": "2026-07-16T21:47:25.395Z",
+  "cwd": "/Users/jcandelaria/mainframe-hq",
+  "context": {},
+  "metrics": {
+    "edits": 10,
+    "commands": 0,
+    "tasks": 0,
+    "errors": 0
+  }
+}

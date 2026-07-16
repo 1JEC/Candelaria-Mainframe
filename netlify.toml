@@ -1,0 +1,27 @@
+[build]
+command = "npm run build"
+functions = "functions"
+publish = ".next"
+
+[[redirects]]
+from = "/*"
+to = "/index.html"
+status = 200
+
+[dev]
+command = "npm run dev"
+port = 3000
+
+[context.production.environment]
+NODE_VERSION = "20"
+NODE_ENV = "production"
+
+[[headers]]
+for = "/_next/static/*"
+[headers.values]
+Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+for = "/api/*"
+[headers.values]
+Cache-Control = "no-cache, no-store, must-revalidate"

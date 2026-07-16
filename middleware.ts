@@ -1,27 +1,19 @@
-import { auth } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
 
-const protectedPaths = ["/dashboard", "/api/admin"];
-const publicPaths = ["/login", "/signup"];
-
-export async function middleware(req: NextRequest) {
+export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // Check if path is protected
-  const isProtected = protectedPaths.some((p) => pathname.startsWith(p));
+  // Simple path-based routing without database calls
+  // Full auth validation happens in page components
+
+  const publicPaths = ["/login", "/api/intake", "/api/health"];
   const isPublic = publicPaths.some((p) => pathname.startsWith(p));
 
-  if (!isProtected) {
+  if (isPublic) {
     return NextResponse.next();
   }
 
-  // Verify session for protected paths
-  const session = await auth();
-  if (!session?.user) {
-    return NextResponse.redirect(new URL("/login", req.url));
-  }
-
-  // Add security headers
+  // Add security headers to all responses
   const response = NextResponse.next();
   response.headers.set("X-Content-Type-Options", "nosniff");
   response.headers.set("X-Frame-Options", "SAMEORIGIN");

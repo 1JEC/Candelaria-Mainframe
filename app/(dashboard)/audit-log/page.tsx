@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { auditLog, users } from "@/drizzle/schema";
+import { auditLog } from "@/drizzle/schema";
 import { desc, count } from "drizzle-orm";
 
 export default async function AuditLogPage() {
@@ -32,8 +32,8 @@ export default async function AuditLogPage() {
         <StatCard label="Total Entries" value={logCount[0]?.count || 0} />
         <StatCard label="Today" value={logs.filter(l => {
           const today = new Date();
-          const logDate = new Date(l.createdAt);
-          return logDate.toDateString() === today.toDateString();
+          const logDate = l.createdAt ? new Date(l.createdAt) : null;
+          return logDate?.toDateString() === today.toDateString();
         }).length} />
         <StatCard label="Unique Actions" value={Object.keys(actionCounts).length} />
         <StatCard label="Unique Users" value={new Set(logs.map(l => l.userId)).size} />
@@ -79,7 +79,7 @@ export default async function AuditLogPage() {
                     <td className="px-6 py-3 text-xs">{log.userId || "system"}</td>
                     <td className="px-6 py-3 text-xs text-gray-500">{log.ip}</td>
                     <td className="px-6 py-3 text-xs text-gray-500">
-                      {new Date(log.createdAt).toLocaleString("nl-NL")}
+                      {log.createdAt ? new Date(log.createdAt).toLocaleString("nl-NL") : "—"}
                     </td>
                   </tr>
                 ))}

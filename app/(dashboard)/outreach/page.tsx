@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { outreachTasks, leads } from "@/drizzle/schema";
+import { outreachTasks } from "@/drizzle/schema";
 import { desc, count, eq } from "drizzle-orm";
 
 export default async function OutreachPage() {
@@ -57,7 +57,7 @@ export default async function OutreachPage() {
                     </td>
                     <td className="px-6 py-3 text-gray-600">{task.notes || "—"}</td>
                     <td className="px-6 py-3 text-xs text-gray-500">
-                      {new Date(task.createdAt).toLocaleDateString("nl-NL")}
+                      {task.createdAt ? new Date(task.createdAt).toLocaleDateString("nl-NL") : "—"}
                     </td>
                   </tr>
                 ))}

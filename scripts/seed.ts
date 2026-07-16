@@ -37,7 +37,7 @@ async function seed() {
 
     // Create settings for user
     const settingsId = `settings-${testUserId}`;
-    const insertedSettings = await db
+    await db
       .insert(settingsTable)
       .values({
         id: settingsId,

@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --brand-black: #000000;
+    --brand-green: #1a7f3f;
+    --brand-white: #ffffff;
+  }
+
+  html {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+      "Helvetica Neue", Arial, sans-serif;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply px-4 py-2 bg-brand-green text-brand-white rounded-md font-semibold hover:bg-brand-black transition;
+  }
+
+  .btn-secondary {
+    @apply px-4 py-2 border-2 border-brand-green text-brand-green rounded-md font-semibold hover:bg-brand-green hover:text-brand-white transition;
+  }
+
+  .input-field {
+    @apply w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-green;
+  }
+}

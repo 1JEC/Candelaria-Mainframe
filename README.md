@@ -4,25 +4,29 @@ Mainframe HQ is the internal operations portal for Candelaria Agency and serves 
 
 ## Project Status
 
-**Fase 0 ✅ COMPLETE** — Blueprint deliverables only. No application code yet.
+**Fase 1 ✅ COMPLETE** — Full authentication, dashboard shell, and database setup.
 
 ### What's Included
 
-- ✅ Full directory structure
+**Fase 0 (Schema & Blueprint)**
 - ✅ Complete Drizzle ORM schema (14 tables, all 5 modules)
 - ✅ TypeScript types and module interfaces
-- ✅ Auth.js skeleton (credentials auth + 2FA for Fase 1)
-- ✅ Next.js 15 app structure with Tailwind CSS (brand colors: black/green/white)
-- ✅ Encryption utilities (AES-256-GCM for credentials)
-- ✅ Security headers, CSRF middleware, rate limiting placeholders
-- ✅ Database utilities (Drizzle ORM + Vercel Postgres)
-- ✅ Health check endpoint (`/api/health`)
-- ✅ Project documentation (CLAUDE.md)
+- ✅ Project documentation (CLAUDE.md, FASE-0-DECISIONS.md)
+
+**Fase 1 (Authentication & Shell)**
+- ✅ Auth.js with credentials provider + TOTP 2FA
+- ✅ Login page (email, password, 2FA code input)
+- ✅ Dashboard layout (navbar + sidebar, responsive)
+- ✅ Settings page with account & integration info
+- ✅ Audit logging system (tracks all actions)
+- ✅ Database operations (seed script with test user)
+- ✅ Security headers, CSRF middleware, session validation
+- ✅ Responsive design (mobile 320px+, desktop)
+- ✅ Module navigation stubs (6 coming-soon pages)
 
 ### What's NOT Built Yet
 
-- Application pages/components (Fase 1+)
-- API endpoints (Fase 1+)
+- API endpoints for data operations (Fase 2+)
 - Agent implementations (Fase 3-5)
 - Tests/E2E (Fase 6)
 
@@ -34,16 +38,26 @@ npm install
 
 # Setup environment variables
 cp env.example .env.local
-# Edit .env.local with your keys
+# Edit .env.local:
+#   DATABASE_URL=your_vercel_postgres_url
+#   NEXTAUTH_SECRET=$(openssl rand -base64 32)
 
 # Setup database
 npm run db:push
+
+# Seed test user (admin with 2FA)
+npm run db:seed
 
 # Run dev server
 npm run dev
 ```
 
-Open http://localhost:3000 → redirects to `/login` (Fase 1)
+**Login credentials** (from seed):
+- Email: `j.candelaria171@gmail.com`
+- Password: `TempPassword123!` (CHANGE AFTER FIRST LOGIN)
+- 2FA: Check seed output for TOTP secret, or use `npm run db:studio`
+
+Open http://localhost:3000 → redirects to `/login` → see dashboard
 
 ## Database Migrations
 
@@ -86,17 +100,17 @@ npm run db:studio
 
 ## Fase Timeline
 
-| Fase | Goal | Deliverable | Duration |
-|------|------|-------------|----------|
-| **0** | ✅ Blauwdruk | Schema, structure, types, CLAUDE.md | Done |
-| **1** | Auth + Shell | Login, 2FA, dashboard layout, DB | ~1-2 weeks |
-| **2** | Website Intake | Forms → leads, email notification | ~1 week |
-| **3** | Social Publisher | Calendar, content gen, approve, publish, metrics | ~2 weeks |
-| **4** | Mailbox | Proton sync, triage, AI drafts, send | ~1.5 weeks |
-| **5** | Prospecting | Prospect search, outreach prep, tasks | ~1.5 weeks |
-| **6** | Polish | Dashboard, reports, tests, Lighthouse, docs | ~1 week |
+| Fase | Goal | Status | Deliverable |
+|------|------|--------|-------------|
+| **0** | ✅ Blauwdruk | COMPLETE | Schema, structure, types, CLAUDE.md |
+| **1** | ✅ Auth + Shell | COMPLETE | Login, 2FA, dashboard, DB, audit logging |
+| **2** | 🚧 Website Intake | IN PROGRESS | Forms → leads, email notification |
+| **3** | ⏳ Social Publisher | PENDING | Calendar, content gen, approve, publish, metrics |
+| **4** | ⏳ Mailbox | PENDING | Proton sync, triage, AI drafts, send |
+| **5** | ⏳ Prospecting | PENDING | Prospect search, outreach prep, tasks |
+| **6** | ⏳ Polish | PENDING | Dashboard, reports, tests, Lighthouse, docs |
 
-**Next Step**: Fase 1 starts when all integrations are confirmed.
+**Next Step**: Fase 2 (Website Intake) starts immediately. Need Resend + database integration setup.
 
 ## Harde Regels (Never Break)
 

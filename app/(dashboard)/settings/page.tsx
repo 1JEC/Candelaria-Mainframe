@@ -1,8 +1,10 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { users } from "@/drizzle/schema";
-import { eq } from "drizzle-orm";
+import { users, integrationCredentials } from "@/drizzle/schema";
+import { eq, and } from "drizzle-orm";
 import { redirect } from "next/navigation";
+import IntegrationConfigButton from "@/components/settings/IntegrationConfigButton";
+import TwoFactorSetup from "@/components/settings/TwoFactorSetup";
 
 export default async function SettingsPage() {
   const session = await auth();
@@ -14,6 +16,22 @@ export default async function SettingsPage() {
   const user = await db.query.users.findFirst({
     where: eq(users.id, session.user.id),
   });
+
+  const providers = [
+    { key: "meta", label: "Meta Graph API" },
+    { key: "x", label: "X API" },
+    { key: "resend", label: "Resend" },
+    { key: "proton", label: "Proton Mail" },
+  ];
+
+  const credentials = await db
+    .select()
+    .from(integrationCredentials)
+    .where(and(eq(integrationCredentials.userId, session.user.id)));
+
+  const configuredProviders = new Set(
+    credentials.filter((c) => c.isActive).map((c) => c.provider)
+  );
 
   return (
     <div>
@@ -71,14 +89,7 @@ export default async function SettingsPage() {
             Security
           </h2>
           {user?.role === "admin" ? (
-            <div>
-              <p className="text-sm text-gray-600 mb-4">
-                Two-factor authentication (2FA) via TOTP is enabled for your admin account.
-              </p>
-              <button className="btn-secondary text-sm py-2 px-4" disabled>
-                Manage 2FA (Coming Soon)
-              </button>
-            </div>
+            <TwoFactorSetup enabled={Boolean(user?.totpSecret)} />
           ) : (
             <p className="text-sm text-gray-600">
               2FA is only available for admin accounts.
@@ -92,13 +103,18 @@ export default async function SettingsPage() {
             Integrations
           </h2>
           <div className="space-y-3">
-            <IntegrationCard name="Meta Graph API" status="Not Configured" />
-            <IntegrationCard name="X API" status="Not Configured" />
-            <IntegrationCard name="Resend" status="Not Configured" />
-            <IntegrationCard name="Proton Mail" status="Not Configured" />
+            {providers.map((provider) => (
+              <IntegrationCard
+                key={provider.key}
+                provider={provider.key}
+                name={provider.label}
+                configured={configuredProviders.has(provider.key)}
+              />
+            ))}
           </div>
           <p className="text-xs text-gray-500 mt-4">
-            Integration setup coming in Fase 2+
+            Handmatige API-key opslag; volledige OAuth-koppeling volgt zodra de app-credentials
+            per provider zijn aangeleverd (zie project-CLAUDE.md).
           </p>
         </section>
 
@@ -121,11 +137,13 @@ export default async function SettingsPage() {
         {/* Danger Zone */}
         <section className="bg-red-50 p-6 rounded-lg border-2 border-red-200">
           <h2 className="text-xl font-semibold text-red-900 mb-4">Danger Zone</h2>
-          <button className="btn-secondary text-sm py-2 px-4 text-red-700 border-red-700" disabled>
-            Delete Account (Disabled)
-          </button>
-          <p className="text-xs text-red-700 mt-2">
-            Account deletion coming in future phases.
+          <p className="text-sm text-red-700">
+            Neem contact op via{" "}
+            <a href="mailto:j.candelaria171@gmail.com" className="underline font-medium">
+              j.candelaria171@gmail.com
+            </a>{" "}
+            om je account te laten verwijderen. Zelf verwijderen is uitgeschakeld omdat dit
+            momenteel het enige beheerdersaccount is.
           </p>
         </section>
       </div>
@@ -134,21 +152,23 @@ export default async function SettingsPage() {
 }
 
 function IntegrationCard({
+  provider,
   name,
-  status,
+  configured,
 }: {
+  provider: string;
   name: string;
-  status: string;
+  configured: boolean;
 }) {
   return (
     <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
       <div>
         <p className="font-medium text-gray-900">{name}</p>
-        <p className="text-xs text-gray-500">{status}</p>
+        <p className={`text-xs ${configured ? "text-green-600" : "text-gray-500"}`}>
+          {configured ? "Configured" : "Not Configured"}
+        </p>
       </div>
-      <button className="text-sm text-gray-400 cursor-not-allowed" disabled>
-        Configure
-      </button>
+      <IntegrationConfigButton provider={provider} label={name} />
     </div>
   );
 }

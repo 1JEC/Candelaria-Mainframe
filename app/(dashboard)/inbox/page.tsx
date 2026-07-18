@@ -4,6 +4,11 @@ import { desc, eq, and, ilike } from "drizzle-orm";
 import SearchFilterBar from "@/components/ui/SearchFilterBar";
 import Pagination from "@/components/ui/Pagination";
 import EmailActions from "@/components/inbox/EmailActions";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Mailbox",
+};
 
 const PAGE_SIZE = 20;
 
@@ -49,7 +54,7 @@ export default async function InboxPage({
         <p className="text-gray-600">Proton Mail sync, triage, responses</p>
       </div>
 
-      <div className="grid grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <StatCard label="Total Emails" value={allInbox.length} />
         <StatCard label="Unread" value={unreadCount} />
         <StatCard label="High Priority" value={highPriorityCount} />

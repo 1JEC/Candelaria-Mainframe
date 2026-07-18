@@ -1,7 +1,12 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { db } from "@/lib/db";
 import { posts, postVersions, leads, outreachTasks, emails } from "@/drizzle/schema";
 import { count, desc, eq, gte, sql } from "drizzle-orm";
+
+export const metadata: Metadata = {
+  title: "Dashboard",
+};
 
 export default async function DashboardPage() {
   const now = new Date();
@@ -57,9 +62,9 @@ export default async function DashboardPage() {
       : 0;
 
   return (
-    <div className="grid grid-cols-3 gap-8">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
       {/* Main Content - 2 columns */}
-      <div className="col-span-2 space-y-8">
+      <div className="lg:col-span-2 space-y-8">
         {/* Header */}
         <div>
           <h1 className="text-3xl font-bold text-gray-900 mb-1">Dashboard</h1>
@@ -75,7 +80,7 @@ export default async function DashboardPage() {
           <div className="space-y-3">
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">OVERZICHT</p>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="p-6 bg-white border border-gray-100 rounded-2xl">
                 <div className="flex items-center justify-between mb-4">
                   <div>
@@ -106,7 +111,7 @@ export default async function DashboardPage() {
           </div>
 
           {/* Module Cards */}
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <ModuleCard title="Leads" value={leadCount.count} icon="👥" href="/leads" />
             <ModuleCard title="Social Publisher" value={postCount.count} icon="📱" href="/posts" />
             <ModuleCard title="Mailbox" value={emailCount.count} icon="📧" href="/inbox" />
@@ -124,7 +129,7 @@ export default async function DashboardPage() {
           </div>
 
           {recentPosts.length > 0 ? (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {recentPosts.map((post) => (
                 <RecentPost
                   key={post.id}
@@ -146,7 +151,7 @@ export default async function DashboardPage() {
         </section>
 
         {/* LEADS TREND */}
-        <section className="grid grid-cols-2 gap-4">
+        <section className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="p-6 bg-white border border-gray-100 rounded-2xl">
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">NIEUWE LEADS • 7 DAGEN</p>
             {leadsPerDay.length > 0 ? (
@@ -181,7 +186,7 @@ export default async function DashboardPage() {
 
       {/* Hero Panel - Right Sidebar */}
       <div className="col-span-1">
-        <div className="sticky top-20 p-6 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-2xl overflow-hidden h-96">
+        <div className="lg:sticky lg:top-20 p-6 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-2xl overflow-hidden h-96">
           <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent opacity-60"></div>
           <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width=%22100%22%20height=%22100%22%20xmlns=%22http://www.w3.org/2000/svg%22%3E%3Crect%20width=%22100%22%20height=%22100%22%20fill=%22%231a7f3f%22%20opacity=%220.1%22/%3E%3Ccircle%20cx=%2250%22%20cy=%2250%22%20r=%2230%22%20fill=%22none%22%20stroke=%22%231a7f3f%22%20stroke-width=%221%22%20opacity=%220.2%22/%3E%3C/svg%3E')] opacity-20"></div>
 

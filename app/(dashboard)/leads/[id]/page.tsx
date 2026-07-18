@@ -5,6 +5,11 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import LeadEditForm from "@/components/leads/LeadEditForm";
 import DeleteLeadButton from "@/components/leads/DeleteLeadButton";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Lead",
+};
 
 export default async function LeadDetailPage({
   params,
@@ -30,7 +35,7 @@ export default async function LeadDetailPage({
         </Link>
       </div>
 
-      <div className="flex justify-between items-start mb-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
         <div>
           <h1 className="text-3xl font-bold text-brand-black">{lead.name || lead.email}</h1>
           <p className="text-gray-600">{lead.email}</p>

@@ -4,6 +4,11 @@ import { desc, count, eq, and } from "drizzle-orm";
 import SearchFilterBar from "@/components/ui/SearchFilterBar";
 import Pagination from "@/components/ui/Pagination";
 import TaskActions from "@/components/outreach/TaskActions";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Prospecting",
+};
 
 const PAGE_SIZE = 20;
 
@@ -41,7 +46,7 @@ export default async function OutreachPage({
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold text-brand-black">Prospecting</h1>
           <p className="text-gray-600">Lead research & outreach campaigns</p>
@@ -51,7 +56,7 @@ export default async function OutreachPage({
         </a>
       </div>
 
-      <div className="grid grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         <StatCard label="Total Tasks" value={taskCount} />
         <StatCard label="Pending" value={pendingCount} />
         <StatCard label="Completed" value={Math.max(0, taskCount - pendingCount)} />

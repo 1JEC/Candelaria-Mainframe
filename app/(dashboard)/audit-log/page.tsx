@@ -3,6 +3,11 @@ import { auditLog } from "@/drizzle/schema";
 import { desc, count, ilike, and } from "drizzle-orm";
 import SearchFilterBar from "@/components/ui/SearchFilterBar";
 import Pagination from "@/components/ui/Pagination";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Audit Log",
+};
 
 const PAGE_SIZE = 25;
 
@@ -47,7 +52,7 @@ export default async function AuditLogPage({
       </div>
 
       {/* Summary */}
-      <div className="grid grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <StatCard label="Total Entries" value={logCount[0]?.count || 0} />
         <StatCard
           label="Today"

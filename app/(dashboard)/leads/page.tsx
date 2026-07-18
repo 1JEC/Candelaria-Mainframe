@@ -4,8 +4,14 @@ import { desc, count, and, or, ilike, eq } from "drizzle-orm";
 import Link from "next/link";
 import NewLeadButton from "@/components/leads/NewLeadButton";
 import DeleteLeadButton from "@/components/leads/DeleteLeadButton";
+import LeadCard from "@/components/leads/LeadCard";
 import SearchFilterBar from "@/components/ui/SearchFilterBar";
 import Pagination from "@/components/ui/Pagination";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Leads",
+};
 
 const PAGE_SIZE = 20;
 
@@ -63,7 +69,7 @@ export default async function LeadsPage({
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
         <div>
           <h1 className="text-3xl font-bold text-brand-black">Leads ({totalCount})</h1>
           <p className="text-gray-600">CRM — klanten en prospects</p>
@@ -85,7 +91,16 @@ export default async function LeadsPage({
       />
 
       {leadsList.length > 0 ? (
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <>
+          {/* Mobile: cards */}
+          <div className="md:hidden space-y-3">
+            {leadsList.map((lead) => (
+              <LeadCard key={lead.id} lead={lead} />
+            ))}
+          </div>
+
+          {/* Tablet/desktop: table */}
+          <div className="hidden md:block bg-white rounded-lg border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-gray-50 border-b border-gray-200">
@@ -134,7 +149,8 @@ export default async function LeadsPage({
               </tbody>
             </table>
           </div>
-        </div>
+          </div>
+        </>
       ) : (
         <div className="p-8 bg-gray-50 rounded-lg border border-dashed border-gray-300 text-center">
           <p className="text-gray-600">Geen leads gevonden.</p>

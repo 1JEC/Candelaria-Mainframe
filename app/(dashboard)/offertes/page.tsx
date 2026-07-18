@@ -2,10 +2,15 @@ import { db } from "@/lib/db";
 import { intakeSubmissions } from "@/drizzle/schema";
 import { desc, count, and, or, eq, ilike, isNull } from "drizzle-orm";
 import Link from "next/link";
+import type { Metadata } from "next";
 import SearchFilterBar from "@/components/ui/SearchFilterBar";
 import Pagination from "@/components/ui/Pagination";
 import SubmissionActions from "@/components/offertes/SubmissionActions";
 import { formTypeLabel, FORM_TYPE_LABELS } from "@/lib/formTypes";
+
+export const metadata: Metadata = {
+  title: "Offertes",
+};
 
 const PAGE_SIZE = 20;
 
@@ -61,7 +66,7 @@ export default async function OffertesPage({
         <p className="text-gray-600">Aanvragen binnengekomen via de website</p>
       </div>
 
-      <div className="grid grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         <StatCard label="Totaal aanvragen" value={totalCount} />
         <StatCard label="Waarvan offertes" value={offerteCount} />
         <StatCard label="Nog niet verwerkt" value={openCount} />

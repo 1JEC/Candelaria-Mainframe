@@ -3,8 +3,13 @@ import { intakeSubmissions } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import type { Metadata } from "next";
 import SubmissionActions from "@/components/offertes/SubmissionActions";
 import { formTypeLabel } from "@/lib/formTypes";
+
+export const metadata: Metadata = {
+  title: "Offerte-aanvraag",
+};
 
 export default async function OfferteDetailPage({
   params,
@@ -26,7 +31,7 @@ export default async function OfferteDetailPage({
         </Link>
       </div>
 
-      <div className="flex justify-between items-start mb-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
         <div>
           <span className="px-2 py-1 bg-brand-green/10 text-brand-green rounded text-xs font-medium mb-2 inline-block">
             {formTypeLabel(submission.formType)}
@@ -45,7 +50,7 @@ export default async function OfferteDetailPage({
 
       <div className="bg-white p-6 rounded-lg border border-gray-200 space-y-4 mb-6">
         <h2 className="text-lg font-semibold text-brand-black">Contactgegevens</h2>
-        <div className="grid grid-cols-2 gap-4 text-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
           <div>
             <p className="text-gray-500">E-mail</p>
             <p className="font-medium">{submission.email}</p>

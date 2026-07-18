@@ -6,6 +6,12 @@ import SearchFilterBar from "@/components/ui/SearchFilterBar";
 import Pagination from "@/components/ui/Pagination";
 import PostStatusSelect from "@/components/posts/PostStatusSelect";
 import DeletePostButton from "@/components/posts/DeletePostButton";
+import PostCard from "@/components/posts/PostCard";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Social Publisher",
+};
 
 const PAGE_SIZE = 20;
 
@@ -60,7 +66,7 @@ export default async function PostsPage({
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-bold text-brand-black">Social Publisher</h1>
           <p className="text-gray-600">Calendar, content, metrics</p>
@@ -75,7 +81,7 @@ export default async function PostsPage({
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         <StatCard label="Total Posts" value={totalCount} />
         <StatCard label="Scheduled" value={scheduledCount} />
         <StatCard label="Published" value={publishedCount} />
@@ -84,7 +90,16 @@ export default async function PostsPage({
       <SearchFilterBar placeholder="Zoek in captions..." statusOptions={STATUS_OPTIONS} />
 
       {postsList.length > 0 ? (
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <>
+          {/* Mobile: cards */}
+          <div className="md:hidden space-y-3">
+            {postsList.map((post) => (
+              <PostCard key={post.id} post={post} />
+            ))}
+          </div>
+
+          {/* Tablet/desktop: table */}
+          <div className="hidden md:block bg-white rounded-lg border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-gray-50 border-b border-gray-200">
@@ -115,7 +130,8 @@ export default async function PostsPage({
               </tbody>
             </table>
           </div>
-        </div>
+          </div>
+        </>
       ) : (
         <div className="p-8 bg-gray-50 rounded-lg border border-dashed border-gray-300 text-center">
           <p className="text-gray-600 mb-4">Geen posts nog.</p>

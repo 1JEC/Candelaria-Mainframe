@@ -36,7 +36,7 @@ export default function LeadEditForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 bg-white p-6 rounded-lg border border-gray-200">
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Naam</label>
           <input value={name} onChange={(e) => setName(e.target.value)} disabled={loading} className="input-field" />

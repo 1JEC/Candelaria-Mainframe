@@ -1,25 +1,88 @@
 import { db } from "@/lib/db";
 import { leads } from "@/drizzle/schema";
-import { desc, count } from "drizzle-orm";
+import { desc, count, and, or, ilike, eq } from "drizzle-orm";
 import Link from "next/link";
+import NewLeadButton from "@/components/leads/NewLeadButton";
+import DeleteLeadButton from "@/components/leads/DeleteLeadButton";
+import SearchFilterBar from "@/components/ui/SearchFilterBar";
+import Pagination from "@/components/ui/Pagination";
 
-export default async function LeadsPage() {
+const PAGE_SIZE = 20;
+
+const STATUS_OPTIONS = [
+  { value: "new", label: "Nieuw" },
+  { value: "contacted", label: "Benaderd" },
+  { value: "qualified", label: "Gekwalificeerd" },
+  { value: "won", label: "Gewonnen" },
+  { value: "lost", label: "Verloren" },
+];
+
+export default async function LeadsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; status?: string; page?: string }>;
+}) {
+  const params = await searchParams;
+  const page = Math.max(1, parseInt(params.page || "1", 10) || 1);
+  const q = params.q?.trim();
+  const status = params.status;
+
+  const conditions = [];
+  if (q) {
+    conditions.push(
+      or(
+        ilike(leads.name, `%${q}%`),
+        ilike(leads.email, `%${q}%`),
+        ilike(leads.company, `%${q}%`)
+      )
+    );
+  }
+  if (status) {
+    conditions.push(eq(leads.status, status));
+  }
+  const where = conditions.length > 0 ? and(...conditions) : undefined;
+
   const leadsList = await db
     .select()
     .from(leads)
+    .where(where)
     .orderBy(desc(leads.createdAt))
-    .limit(50);
+    .limit(PAGE_SIZE)
+    .offset((page - 1) * PAGE_SIZE);
 
-  const leadCount = await db.select({ count: count() }).from(leads);
+  const [{ count: totalCount }] = await db
+    .select({ count: count() })
+    .from(leads)
+    .where(where);
+
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+
+  const exportParams = new URLSearchParams();
+  if (q) exportParams.set("q", q);
+  if (status) exportParams.set("status", status);
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-brand-black">Leads ({leadCount[0]?.count || 0})</h1>
+          <h1 className="text-3xl font-bold text-brand-black">Leads ({totalCount})</h1>
           <p className="text-gray-600">CRM — klanten en prospects</p>
         </div>
+        <div className="flex items-center gap-3">
+          <a
+            href={`/api/leads/export?${exportParams.toString()}`}
+            className="btn-secondary text-sm py-2 px-4"
+          >
+            Exporteren (CSV)
+          </a>
+          <NewLeadButton />
+        </div>
       </div>
+
+      <SearchFilterBar
+        placeholder="Zoek op naam, e-mail of bedrijf..."
+        statusOptions={STATUS_OPTIONS}
+      />
 
       {leadsList.length > 0 ? (
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
@@ -33,19 +96,14 @@ export default async function LeadsPage() {
                   <th className="px-6 py-3 text-left font-semibold">Status</th>
                   <th className="px-6 py-3 text-left font-semibold">Score</th>
                   <th className="px-6 py-3 text-left font-semibold">Bron</th>
+                  <th className="px-6 py-3 text-left font-semibold">Actie</th>
                 </tr>
               </thead>
               <tbody>
                 {leadsList.map((lead) => (
-                  <tr
-                    key={lead.id}
-                    className="border-b border-gray-200 hover:bg-gray-50"
-                  >
+                  <tr key={lead.id} className="border-b border-gray-200 hover:bg-gray-50">
                     <td className="px-6 py-3">
-                      <Link
-                        href={`/dashboard/leads/${lead.id}`}
-                        className="font-medium text-brand-green hover:underline"
-                      >
+                      <Link href={`/leads/${lead.id}`} className="font-medium text-brand-green hover:underline">
                         {lead.name || "—"}
                       </Link>
                     </td>
@@ -67,8 +125,9 @@ export default async function LeadsPage() {
                         <span className="text-xs">{lead.score || 0}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-3 text-xs text-gray-500">
-                      {lead.source}
+                    <td className="px-6 py-3 text-xs text-gray-500">{lead.source}</td>
+                    <td className="px-6 py-3">
+                      <DeleteLeadButton id={lead.id} name={lead.name || lead.email} />
                     </td>
                   </tr>
                 ))}
@@ -78,9 +137,11 @@ export default async function LeadsPage() {
         </div>
       ) : (
         <div className="p-8 bg-gray-50 rounded-lg border border-dashed border-gray-300 text-center">
-          <p className="text-gray-600">Geen leads nog. Website intake vindt hier terecht.</p>
+          <p className="text-gray-600">Geen leads gevonden.</p>
         </div>
       )}
+
+      <Pagination page={page} totalPages={totalPages} />
     </div>
   );
 }

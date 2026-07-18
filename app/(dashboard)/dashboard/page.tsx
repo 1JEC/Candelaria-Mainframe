@@ -1,21 +1,60 @@
+import Link from "next/link";
 import { db } from "@/lib/db";
-import { posts } from "@/drizzle/schema";
-import { count } from "drizzle-orm";
+import { posts, postVersions, leads, outreachTasks, emails } from "@/drizzle/schema";
+import { count, desc, eq, gte, sql } from "drizzle-orm";
 
 export default async function DashboardPage() {
-  // Get counts - fallback if DB unavailable
-  let postCount = 0;
-  try {
-    const result = await db.select({ count: count() }).from(posts);
-    postCount = result[0]?.count || 0;
-  } catch (error) {
-    // Database not available (common in preview/MVP mode)
-    console.log("Database unavailable, using demo data");
-  }
+  const now = new Date();
+  const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-  const totalReach = 628400;
-  const engagement = "5.2%";
-  const newFollowers = "3.940";
+  const [postCount] = await db.select({ count: count() }).from(posts);
+  const [publishedCount] = await db.select({ count: count() }).from(posts).where(eq(posts.status, "published"));
+  const [scheduledCount] = await db.select({ count: count() }).from(posts).where(eq(posts.status, "scheduled"));
+  const [draftCount] = await db.select({ count: count() }).from(posts).where(eq(posts.status, "draft"));
+
+  const [leadCount] = await db.select({ count: count() }).from(leads);
+  const [leadsThisWeek] = await db
+    .select({ count: count() })
+    .from(leads)
+    .where(gte(leads.createdAt, weekAgo));
+
+  const [outreachPending] = await db
+    .select({ count: count() })
+    .from(outreachTasks)
+    .where(eq(outreachTasks.status, "pending"));
+  const [outreachTotal] = await db.select({ count: count() }).from(outreachTasks);
+
+  const [emailCount] = await db.select({ count: count() }).from(emails);
+
+  const recentPosts = await db
+    .select({
+      id: posts.id,
+      status: posts.status,
+      platforms: posts.platforms,
+      contentType: posts.contentType,
+      createdAt: posts.createdAt,
+      caption: postVersions.caption,
+    })
+    .from(posts)
+    .leftJoin(postVersions, eq(postVersions.postId, posts.id))
+    .orderBy(desc(posts.createdAt))
+    .limit(4);
+
+  const leadsPerDay = await db
+    .select({
+      day: sql<string>`to_char(${leads.createdAt}, 'YYYY-MM-DD')`,
+      total: count(),
+    })
+    .from(leads)
+    .where(gte(leads.createdAt, new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000)))
+    .groupBy(sql`to_char(${leads.createdAt}, 'YYYY-MM-DD')`)
+    .orderBy(sql`to_char(${leads.createdAt}, 'YYYY-MM-DD')`);
+
+  const maxDay = Math.max(1, ...leadsPerDay.map((d) => d.total));
+  const responseRate =
+    outreachTotal.count > 0
+      ? Math.round(((outreachTotal.count - outreachPending.count) / outreachTotal.count) * 100)
+      : 0;
 
   return (
     <div className="grid grid-cols-3 gap-8">
@@ -23,142 +62,143 @@ export default async function DashboardPage() {
       <div className="col-span-2 space-y-8">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-1">Social</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-1">Dashboard</h1>
           <p className="text-gray-600 text-sm">
-            5 accounts publishing on schedule across 4 platforms. <span className="font-semibold">The agent ships it.</span> You approve the queue.
+            Overzicht van Candelaria Agency operations. <span className="font-semibold">{postCount.count} posts</span>,{" "}
+            <span className="font-semibold">{leadCount.count} leads</span> en{" "}
+            <span className="font-semibold">{emailCount.count} e-mails</span> in de portal.
           </p>
         </div>
 
-        {/* BROADCAST - LAST 7 DAYS */}
+        {/* OVERVIEW */}
         <section className="space-y-6">
-        <div className="space-y-3">
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">BROADCAST • LAST 7 DAYS</p>
-
-          {/* Large Metrics */}
-          <div className="grid grid-cols-3 gap-4">
-            <div className="p-6 bg-white border border-gray-100 rounded-2xl">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">TOTAL REACH</p>
-                  <p className="text-4xl font-bold text-gray-900">{(totalReach / 1000).toFixed(0)}k</p>
-                </div>
-                <div className="text-2xl">📊</div>
-              </div>
-              <p className="text-xs text-gray-600">Across 12 posts • +14% wk/wk</p>
-            </div>
-
-            <div className="p-6 bg-white border border-gray-100 rounded-2xl">
-              <div className="space-y-2">
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">ENGAGEMENT</p>
-                <p className="text-3xl font-bold text-gray-900">{engagement}</p>
-                <p className="text-xs text-green-600">↑ 1.8% avg wk/wk</p>
-              </div>
-              <p className="text-xs text-gray-600 mt-4">The content-machine drafted 9 of 12 posts this week. Avg engagement held at 5.2%, well above the 3.1% category line.</p>
-            </div>
-
-            <div className="p-6 bg-white border border-gray-100 rounded-2xl">
-              <div className="space-y-2">
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">NET NEW FOLLOWERS</p>
-                <p className="text-3xl font-bold text-gray-900">{newFollowers}</p>
-                <p className="text-xs text-green-600">↑ +1.3% vs prior 7d</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Platform Cards */}
-        <div className="grid grid-cols-4 gap-4">
-          <PlatformCard platform="Instagram" followers="236K" engagement="4.8% ER" icon="📸" />
-          <PlatformCard platform="LinkedIn" followers="54K" engagement="3.2% ER" icon="💼" />
-          <PlatformCard platform="YouTube" followers="312K" engagement="6.7% ER" icon="▶️" />
-          <div className="p-6 bg-white border border-gray-100 rounded-2xl">
-            <p className="text-xs text-gray-500 mb-3">Now publishing</p>
-            <p className="text-sm text-gray-700">POV: your gym bottle holds 2 litres — <span className="text-gray-400">@forgewaters</span></p>
-          </div>
-        </div>
-      </section>
-
-      {/* RECENT POSTS */}
-      <section className="space-y-4">
-        <div className="flex items-center justify-between">
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">RECENT POSTS • {postCount} published • 4 scheduled</p>
-          <button className="text-xs text-gray-600 hover:text-gray-900">Full report →</button>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <RecentPost
-            title="The 3am restock run that broke our DMs"
-            engagement="184K views • 12.4K likes"
-            platform="@forgewaters • Instagram • posted 2d ago"
-            badge="TOP POST • 70"
-            badgeColor="orange"
-          />
-          <div className="p-6 bg-white border border-gray-100 rounded-2xl flex flex-col justify-between">
-            <div>
-              <p className="text-xs text-gray-500 mb-4">
-                <span className="inline-block bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs mr-2">All</span>
-                <span className="inline-block bg-green-100 text-green-700 px-2 py-1 rounded text-xs mr-2">Published</span>
-                <span className="inline-block bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs">Scheduled</span>
-              </p>
-            </div>
-            <input
-              type="text"
-              placeholder="Filter posts, captions, channel..."
-              className="px-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg focus:outline-none"
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* ENGAGEMENT TREND */}
-      <section className="grid grid-cols-2 gap-4">
-        <div className="p-6 bg-white border border-gray-100 rounded-2xl">
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">ENGAGEMENT TREND • 12 WEEKS</p>
-          <div className="h-24 bg-gray-50 rounded-lg border border-gray-100 flex items-end justify-between p-4">
-            <div className="h-1/3 w-2 bg-gray-300 rounded"></div>
-            <div className="h-1/2 w-2 bg-gray-300 rounded"></div>
-            <div className="h-2/3 w-2 bg-gray-300 rounded"></div>
-            <div className="h-3/4 w-2 bg-gray-300 rounded"></div>
-            <div className="h-5/6 w-2 bg-gray-300 rounded"></div>
-            <div className="h-full w-2 bg-green-400 rounded"></div>
-          </div>
-          <p className="text-xs text-gray-500 mt-3">5.2% avg • +0.8pp wk/wk ↑</p>
-        </div>
-
-        <div className="p-6 bg-white border border-gray-100 rounded-2xl">
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">KEY METRICS</p>
           <div className="space-y-3">
-            <MetricRow label="Impressions" value="184K" change="+12.4K" />
-            <MetricRow label="Clicks" value="342" change="+8.9%" />
-            <MetricRow label="Shares" value="67" change="+3.2%" />
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">OVERZICHT</p>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div className="p-6 bg-white border border-gray-100 rounded-2xl">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">TOTAAL LEADS</p>
+                    <p className="text-4xl font-bold text-gray-900">{leadCount.count}</p>
+                  </div>
+                  <div className="text-2xl">👥</div>
+                </div>
+                <p className="text-xs text-gray-600">+{leadsThisWeek.count} deze week</p>
+              </div>
+
+              <div className="p-6 bg-white border border-gray-100 rounded-2xl">
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">POSTS GEPUBLICEERD</p>
+                  <p className="text-3xl font-bold text-gray-900">{publishedCount.count}</p>
+                </div>
+                <p className="text-xs text-gray-600 mt-4">{scheduledCount.count} ingepland • {draftCount.count} concept</p>
+              </div>
+
+              <div className="p-6 bg-white border border-gray-100 rounded-2xl">
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">OUTREACH RESPONSE RATE</p>
+                  <p className="text-3xl font-bold text-gray-900">{responseRate}%</p>
+                </div>
+                <p className="text-xs text-green-600 mt-4">{outreachPending.count} taken nog open</p>
+              </div>
+            </div>
           </div>
-        </div>
-      </section>
+
+          {/* Module Cards */}
+          <div className="grid grid-cols-4 gap-4">
+            <ModuleCard title="Leads" value={leadCount.count} icon="👥" href="/leads" />
+            <ModuleCard title="Social Publisher" value={postCount.count} icon="📱" href="/posts" />
+            <ModuleCard title="Mailbox" value={emailCount.count} icon="📧" href="/inbox" />
+            <ModuleCard title="Prospecting" value={outreachTotal.count} icon="🤖" href="/outreach" />
+          </div>
+        </section>
+
+        {/* RECENT POSTS */}
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">RECENTE POSTS • {postCount.count} totaal</p>
+            <Link href="/posts" className="text-xs text-gray-600 hover:text-gray-900">
+              Full report →
+            </Link>
+          </div>
+
+          {recentPosts.length > 0 ? (
+            <div className="grid grid-cols-2 gap-4">
+              {recentPosts.map((post) => (
+                <RecentPost
+                  key={post.id}
+                  caption={post.caption || "(geen caption)"}
+                  platforms={post.platforms?.join(", ") || "—"}
+                  status={post.status || "draft"}
+                  createdAt={post.createdAt}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="p-6 bg-white border border-gray-100 rounded-2xl text-center">
+              <p className="text-sm text-gray-500 mb-3">Nog geen posts aangemaakt.</p>
+              <Link href="/posts/new" className="btn-primary text-sm">
+                + New Post
+              </Link>
+            </div>
+          )}
+        </section>
+
+        {/* LEADS TREND */}
+        <section className="grid grid-cols-2 gap-4">
+          <div className="p-6 bg-white border border-gray-100 rounded-2xl">
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">NIEUWE LEADS • 7 DAGEN</p>
+            {leadsPerDay.length > 0 ? (
+              <div className="h-24 bg-gray-50 rounded-lg border border-gray-100 flex items-end justify-between p-4 gap-1">
+                {leadsPerDay.map((d) => (
+                  <div
+                    key={d.day}
+                    className="w-4 bg-green-400 rounded"
+                    style={{ height: `${Math.max(8, (d.total / maxDay) * 100)}%` }}
+                    title={`${d.day}: ${d.total}`}
+                  ></div>
+                ))}
+              </div>
+            ) : (
+              <div className="h-24 bg-gray-50 rounded-lg border border-gray-100 flex items-center justify-center">
+                <p className="text-xs text-gray-400">Nog geen leads deze week</p>
+              </div>
+            )}
+            <p className="text-xs text-gray-500 mt-3">{leadsThisWeek.count} nieuwe leads deze week</p>
+          </div>
+
+          <div className="p-6 bg-white border border-gray-100 rounded-2xl">
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">KEY METRICS</p>
+            <div className="space-y-3">
+              <MetricRow label="E-mails in mailbox" value={String(emailCount.count)} />
+              <MetricRow label="Outreach-taken open" value={String(outreachPending.count)} />
+              <MetricRow label="Posts in concept" value={String(draftCount.count)} />
+            </div>
+          </div>
+        </section>
       </div>
 
       {/* Hero Panel - Right Sidebar */}
       <div className="col-span-1">
         <div className="sticky top-20 p-6 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-2xl overflow-hidden h-96">
-          {/* Hero Image Placeholder with gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent opacity-60"></div>
           <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width=%22100%22%20height=%22100%22%20xmlns=%22http://www.w3.org/2000/svg%22%3E%3Crect%20width=%22100%22%20height=%22100%22%20fill=%22%231a7f3f%22%20opacity=%220.1%22/%3E%3Ccircle%20cx=%2250%22%20cy=%2250%22%20r=%2230%22%20fill=%22none%22%20stroke=%22%231a7f3f%22%20stroke-width=%221%22%20opacity=%220.2%22/%3E%3C/svg%3E')] opacity-20"></div>
 
           <div className="relative h-full flex flex-col justify-between">
-            {/* Top section with icon */}
             <div>
               <div className="text-5xl mb-3">📊</div>
               <h3 className="text-lg font-bold text-white">Mission Control</h3>
             </div>
 
-            {/* Bottom section with stats */}
             <div className="space-y-4">
               <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
-                <p className="text-xs text-gray-300 uppercase tracking-wider mb-1">Active Campaigns</p>
-                <p className="text-2xl font-bold text-white">5</p>
+                <p className="text-xs text-gray-300 uppercase tracking-wider mb-1">Actieve outreach-taken</p>
+                <p className="text-2xl font-bold text-white">{outreachPending.count}</p>
               </div>
               <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
-                <p className="text-xs text-gray-300 uppercase tracking-wider mb-1">Next Review</p>
-                <p className="text-sm text-gray-200">In 4 hours</p>
+                <p className="text-xs text-gray-300 uppercase tracking-wider mb-1">Ingeplande posts</p>
+                <p className="text-sm text-gray-200">{scheduledCount.count}</p>
               </div>
             </div>
           </div>
@@ -169,16 +209,16 @@ export default async function DashboardPage() {
           <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4">Quick Stats</p>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Pending Approvals</span>
-              <span className="text-lg font-bold text-gray-900">2</span>
+              <span className="text-sm text-gray-600">Posts in concept</span>
+              <span className="text-lg font-bold text-gray-900">{draftCount.count}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Scheduled Posts</span>
-              <span className="text-lg font-bold text-gray-900">4</span>
+              <span className="text-sm text-gray-600">Ingeplande posts</span>
+              <span className="text-lg font-bold text-gray-900">{scheduledCount.count}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">Response Rate</span>
-              <span className="text-lg font-bold text-green-600">94%</span>
+              <span className="text-sm text-gray-600">Outreach response rate</span>
+              <span className="text-lg font-bold text-green-600">{responseRate}%</span>
             </div>
           </div>
         </div>
@@ -187,64 +227,63 @@ export default async function DashboardPage() {
   );
 }
 
-function PlatformCard({
-  platform,
-  followers,
-  engagement,
+function ModuleCard({
+  title,
+  value,
   icon,
+  href,
 }: {
-  platform: string;
-  followers: string;
-  engagement: string;
+  title: string;
+  value: number;
   icon: string;
+  href: string;
 }) {
   return (
-    <div className="p-6 bg-white border border-gray-100 rounded-2xl">
+    <Link href={href} className="p-6 bg-white border border-gray-100 rounded-2xl hover:shadow-md transition-all block">
       <p className="text-lg mb-3">{icon}</p>
-      <p className="text-xs text-gray-500 mb-2 font-semibold uppercase">{platform}</p>
-      <p className="text-2xl font-bold text-gray-900 mb-1">{followers}</p>
-      <p className="text-xs text-green-600">{engagement}</p>
-    </div>
+      <p className="text-xs text-gray-500 mb-2 font-semibold uppercase">{title}</p>
+      <p className="text-2xl font-bold text-gray-900 mb-1">{value}</p>
+    </Link>
   );
 }
 
 function RecentPost({
-  title,
-  engagement,
-  platform,
-  badge,
-  badgeColor,
+  caption,
+  platforms,
+  status,
+  createdAt,
 }: {
-  title: string;
-  engagement: string;
-  platform: string;
-  badge: string;
-  badgeColor: "orange" | "green" | "blue";
+  caption: string;
+  platforms: string;
+  status: string;
+  createdAt: Date | null;
 }) {
-  const badgeClasses = {
-    orange: "bg-orange-100 text-orange-700",
-    green: "bg-green-100 text-green-700",
-    blue: "bg-blue-100 text-blue-700",
+  const badgeClasses: Record<string, string> = {
+    published: "bg-green-100 text-green-700",
+    scheduled: "bg-blue-100 text-blue-700",
+    draft: "bg-gray-100 text-gray-700",
+    approved: "bg-orange-100 text-orange-700",
+    failed: "bg-red-100 text-red-700",
   };
 
   return (
-    <div className="p-6 bg-white border border-gray-100 rounded-2xl border-l-4 border-l-orange-400">
-      <p className={`text-xs font-bold ${badgeClasses[badgeColor]} px-2 py-1 rounded inline-block mb-3`}>{badge}</p>
-      <p className="font-semibold text-gray-900 mb-3 text-sm">{title}</p>
-      <p className="text-sm font-medium text-gray-900 mb-2">{engagement}</p>
-      <p className="text-xs text-gray-600">{platform}</p>
+    <div className="p-6 bg-white border border-gray-100 rounded-2xl border-l-4 border-l-brand-green">
+      <p className={`text-xs font-bold ${badgeClasses[status] || badgeClasses.draft} px-2 py-1 rounded inline-block mb-3`}>
+        {status.toUpperCase()}
+      </p>
+      <p className="font-semibold text-gray-900 mb-3 text-sm line-clamp-2">{caption}</p>
+      <p className="text-xs text-gray-600">
+        {platforms} • {createdAt ? new Date(createdAt).toLocaleDateString("nl-NL") : "—"}
+      </p>
     </div>
   );
 }
 
-function MetricRow({ label, value, change }: { label: string; value: string; change: string }) {
+function MetricRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between">
       <p className="text-sm text-gray-600">{label}</p>
-      <div className="text-right">
-        <p className="text-sm font-bold text-gray-900">{value}</p>
-        <p className="text-xs text-green-600">{change}</p>
-      </div>
+      <p className="text-sm font-bold text-gray-900">{value}</p>
     </div>
   );
 }

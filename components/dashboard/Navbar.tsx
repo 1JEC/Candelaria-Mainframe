@@ -31,8 +31,8 @@ export function Navbar({ session }: NavbarProps) {
   const breadcrumb = matchedRoute ? ROUTE_LABELS[matchedRoute] : { section: "MAINFRAME", title: "HQ" };
 
   return (
-    <nav className="bg-white border-b border-gray-100 ml-56">
-      <div className="px-8 h-16 flex items-center justify-between">
+    <nav className="bg-white border-b border-gray-100">
+      <div className="px-4 md:px-8 h-16 flex items-center justify-between">
         {/* Breadcrumb/Title Area */}
         <div className="flex items-center gap-4">
           <span className="text-sm font-semibold text-gray-400 uppercase">{breadcrumb.section}</span>

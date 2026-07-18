@@ -2,6 +2,12 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { Navbar } from "@/components/dashboard/Navbar";
 import { Sidebar } from "@/components/dashboard/Sidebar";
+import MobileNav from "@/components/dashboard/MobileNav";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 export default async function DashboardLayout({
   children,
@@ -17,10 +23,11 @@ export default async function DashboardLayout({
   return (
     <div className="min-h-screen bg-gray-50">
       <Sidebar />
-      <div className="ml-56 flex flex-col min-h-screen">
+      <MobileNav />
+      <div className="md:ml-56 flex flex-col min-h-screen">
         <Navbar session={session} />
         <main className="flex-1 overflow-y-auto">
-          <div className="p-8 max-w-7xl">{children}</div>
+          <div className="p-4 md:p-8 max-w-7xl">{children}</div>
         </main>
       </div>
     </div>

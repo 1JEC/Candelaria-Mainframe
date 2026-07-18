@@ -46,3 +46,5 @@ drizzle/migrations/
 
 # OS
 Thumbs.db
+.vercel
+.env*

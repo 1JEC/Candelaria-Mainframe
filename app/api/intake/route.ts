@@ -120,7 +120,7 @@ export async function POST(req: NextRequest) {
             <p><strong>Telefoon:</strong> ${payload.phone || "—"}</p>
             <p><strong>Bericht:</strong></p>
             <p>${payload.message || "—"}</p>
-            <p><a href="http://localhost:3000/dashboard/leads">Bekijk in portaal</a></p>
+            <p><a href="${process.env.NEXTAUTH_URL || "https://mainframe-hq.vercel.app"}/leads">Bekijk in portaal</a></p>
           `,
         });
       } catch (emailError) {

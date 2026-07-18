@@ -118,6 +118,8 @@ export default function LoginForm() {
               <input
                 id="totp"
                 type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 value={totp}
                 onChange={(e) => setTotp(e.target.value.replace(/\D/g, "").slice(0, 6))}
                 placeholder="000000"

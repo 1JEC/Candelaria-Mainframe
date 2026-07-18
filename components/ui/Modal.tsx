@@ -31,18 +31,24 @@ export default function Modal({
   return (
     <div
       ref={backdropRef}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label={title}
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 sm:px-4"
       onClick={(e) => {
         if (e.target === backdropRef.current) onClose();
       }}
     >
-      <div className="w-full max-w-lg rounded-lg bg-white border border-gray-200 shadow-xl">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+      <div
+        className="w-full sm:max-w-lg max-h-[90vh] overflow-y-auto rounded-t-2xl sm:rounded-lg bg-white border border-gray-200 shadow-xl"
+        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      >
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white">
           <h2 className="text-lg font-semibold text-brand-black">{title}</h2>
           <button
             onClick={onClose}
             aria-label="Sluiten"
-            className="text-gray-400 hover:text-gray-700 text-xl leading-none"
+            className="flex items-center justify-center h-11 w-11 -mr-2 text-gray-400 hover:text-gray-700 text-xl leading-none"
           >
             ×
           </button>

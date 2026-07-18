@@ -114,7 +114,7 @@ export default function ProcessGuides() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-brand-black mb-2">Process Guides</h2>
+        <h1 className="text-2xl font-bold text-brand-black mb-2">Process Guides</h1>
         <p className="text-gray-600">Step-by-step guides for common agency tasks</p>
       </div>
 
@@ -158,7 +158,7 @@ export default function ProcessGuides() {
                 <div className="flex items-start gap-4">
                   <div className="text-3xl">{guide.icon}</div>
                   <div className="flex-1">
-                    <h3 className="font-semibold text-brand-black mb-1">{guide.title}</h3>
+                    <h2 className="font-semibold text-brand-black mb-1">{guide.title}</h2>
                     <p className="text-xs text-brand-green font-medium mb-2">{guide.category}</p>
                     <p className="text-sm text-gray-600">{guide.description}</p>
                   </div>
@@ -180,13 +180,13 @@ export default function ProcessGuides() {
             <div className="flex items-start gap-4 mb-6">
               <div className="text-5xl">{selectedGuideData.icon}</div>
               <div>
-                <h1 className="text-3xl font-bold text-brand-black mb-2">{selectedGuideData.title}</h1>
+                <h2 className="text-3xl font-bold text-brand-black mb-2">{selectedGuideData.title}</h2>
                 <p className="text-gray-600">{selectedGuideData.description}</p>
               </div>
             </div>
 
             <div className="border-t border-gray-200 pt-6">
-              <h2 className="text-lg font-semibold text-brand-black mb-4">Step-by-Step</h2>
+              <h3 className="text-lg font-semibold text-brand-black mb-4">Step-by-Step</h3>
               <div className="space-y-4">
                 {selectedGuideData.steps.map((step, index) => (
                   <div key={index} className="flex gap-4">

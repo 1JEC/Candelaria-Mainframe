@@ -1,5 +1,43 @@
 import { Suspense } from "react";
+import type { Metadata } from "next";
 import LoginForm from "@/components/auth/LoginForm";
+
+export const metadata: Metadata = {
+  title: "Inloggen",
+  description:
+    "Log in bij het Candelaria Agency operations-portal voor het beheren van leads, social media en klantcommunicatie.",
+  alternates: { canonical: "/login" },
+  robots: { index: true, follow: true },
+  openGraph: {
+    title: "Inloggen | Candelaria Agency",
+    description: "Het interne operations-portal van Candelaria Agency.",
+    url: "/login",
+    siteName: "Candelaria Agency",
+    locale: "nl_NL",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Inloggen | Candelaria Agency",
+    description: "Het interne operations-portal van Candelaria Agency.",
+  },
+};
+
+const organizationJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "ProfessionalService",
+  name: "Candelaria Agency",
+  image: "/logo.png",
+  logo: "/logo.png",
+  address: {
+    "@type": "PostalAddress",
+    addressLocality: "Den Haag",
+    addressCountry: "NL",
+  },
+  areaServed: "NL",
+  description:
+    "Candelaria Agency bouwt websites op maat en verzorgt onderhoud en social media management voor Nederlandse MKB-ondernemers.",
+};
 
 function LoginPageContent() {
   return <LoginForm />;
@@ -7,9 +45,15 @@ function LoginPageContent() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<LoginPageSkeleton />}>
-      <LoginPageContent />
-    </Suspense>
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+      />
+      <Suspense fallback={<LoginPageSkeleton />}>
+        <LoginPageContent />
+      </Suspense>
+    </>
   );
 }
 

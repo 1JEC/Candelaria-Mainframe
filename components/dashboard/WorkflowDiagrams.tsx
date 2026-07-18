@@ -62,7 +62,7 @@ export default function WorkflowDiagrams() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-brand-black mb-2">Workflow Diagrams</h2>
+        <h1 className="text-2xl font-bold text-brand-black mb-2">Workflow Diagrams</h1>
         <p className="text-gray-600">Visualize agency workflows and processes</p>
       </div>
 
@@ -74,7 +74,7 @@ export default function WorkflowDiagrams() {
               className="p-6 border border-gray-200 rounded-lg hover:border-brand-green hover:shadow-md transition-all cursor-pointer"
               onClick={() => handleViewWorkflow(workflow.template)}
             >
-              <h3 className="font-semibold text-brand-black mb-2">{workflow.name}</h3>
+              <h2 className="font-semibold text-brand-black mb-2">{workflow.name}</h2>
               <p className="text-sm text-gray-600 mb-4">{workflow.description}</p>
               <button className="text-brand-green hover:text-brand-green-dark font-medium text-sm">
                 View Diagram →

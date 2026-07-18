@@ -1,7 +1,12 @@
 import { db } from "@/lib/db";
 import { auditLog, leads, posts, emails, agentRuns } from "@/drizzle/schema";
 import { count } from "drizzle-orm";
+import type { Metadata } from "next";
 import PortalInsights from "@/components/dashboard/PortalInsights";
+
+export const metadata: Metadata = {
+  title: "Analytics",
+};
 
 export default async function AnalyticsPage() {
   const [logCount] = await db.select({ count: count() }).from(auditLog);

@@ -62,7 +62,7 @@ export default function PortalInsights({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-brand-black mb-2">Portal Insights</h2>
+        <h1 className="text-2xl font-bold text-brand-black mb-2">Portal Insights</h1>
         <p className="text-gray-600">Key performance indicators and system health</p>
       </div>
 
@@ -104,7 +104,7 @@ export default function PortalInsights({
                 {insight.trend === "up" ? "↑" : insight.trend === "down" ? "↓" : "→"} {insight.trend}
               </div>
             </div>
-            <h3 className="font-semibold text-brand-black mb-1">{insight.title}</h3>
+            <h2 className="font-semibold text-brand-black mb-1">{insight.title}</h2>
             <p className="text-sm text-gray-600 mb-3">{insight.description}</p>
             <div className="text-2xl font-bold text-brand-green">{insight.metric}</div>
           </div>
@@ -113,7 +113,7 @@ export default function PortalInsights({
 
       {/* System Health */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <h3 className="font-semibold text-brand-black mb-4">System Health</h3>
+        <h2 className="font-semibold text-brand-black mb-4">System Health</h2>
         <div className="space-y-4">
           <HealthIndicator label="Portal Status" status="healthy" value="Operating normally" />
           <HealthIndicator label="Database" status="healthy" value="Connected and responsive" />
@@ -125,7 +125,7 @@ export default function PortalInsights({
 
       {/* Quick Actions */}
       <div className="bg-gradient-to-r from-brand-green/10 to-brand-green/5 border border-brand-green/20 rounded-lg p-6">
-        <h3 className="font-semibold text-brand-black mb-3">Recommended Actions</h3>
+        <h2 className="font-semibold text-brand-black mb-3">Recommended Actions</h2>
         <ul className="space-y-2 text-sm text-gray-700">
           <li>✓ Review lead intake processes to improve conversion rates</li>
           <li>✓ Schedule content review meeting for next week</li>

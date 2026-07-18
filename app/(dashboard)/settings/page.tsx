@@ -5,6 +5,11 @@ import { eq, and } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import IntegrationConfigButton from "@/components/settings/IntegrationConfigButton";
 import TwoFactorSetup from "@/components/settings/TwoFactorSetup";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Settings",
+};
 
 export default async function SettingsPage() {
   const session = await auth();

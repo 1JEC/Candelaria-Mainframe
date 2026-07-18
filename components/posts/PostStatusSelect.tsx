@@ -32,7 +32,7 @@ export default function PostStatusSelect({ id, status }: { id: string; status: s
       value={value}
       onChange={handleChange}
       disabled={isPending}
-      className={`px-2 py-1 rounded text-xs font-medium border-0 ${
+      className={`min-h-11 sm:min-h-0 px-2 py-1 rounded text-xs font-medium border-0 ${
         value === "published"
           ? "bg-green-100 text-green-800"
           : value === "scheduled"

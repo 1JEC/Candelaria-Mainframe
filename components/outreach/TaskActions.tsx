@@ -41,12 +41,15 @@ export default function TaskActions({ id, status }: { id: string; status: string
         <button
           onClick={handleComplete}
           disabled={loading}
-          className="text-xs text-brand-green hover:text-brand-green-dark font-medium disabled:opacity-50"
+          className="inline-flex items-center min-h-11 px-2 -mx-2 text-xs text-brand-green hover:text-brand-green-dark font-medium disabled:opacity-50"
         >
           Afronden
         </button>
       )}
-      <button onClick={() => setOpen(true)} className="text-xs text-red-600 hover:text-red-800">
+      <button
+        onClick={() => setOpen(true)}
+        className="inline-flex items-center min-h-11 px-2 -mx-2 text-xs text-red-600 hover:text-red-800"
+      >
         Verwijderen
       </button>
       <ConfirmModal

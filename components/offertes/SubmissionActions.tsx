@@ -51,7 +51,7 @@ export default function SubmissionActions({
       <button
         onClick={handleReviewed}
         disabled={isPending}
-        className={`${textClass} font-medium disabled:opacity-50 ${
+        className={`inline-flex items-center min-h-11 px-2 -mx-2 ${textClass} font-medium disabled:opacity-50 ${
           reviewed ? "text-gray-500 hover:text-gray-700" : "text-brand-green hover:text-brand-green-dark"
         }`}
       >
@@ -60,7 +60,7 @@ export default function SubmissionActions({
       <button
         onClick={handleSpam}
         disabled={isPending}
-        className={`${textClass} font-medium disabled:opacity-50 ${
+        className={`inline-flex items-center min-h-11 px-2 -mx-2 ${textClass} font-medium disabled:opacity-50 ${
           isSpam ? "text-gray-500 hover:text-gray-700" : "text-red-600 hover:text-red-800"
         }`}
       >

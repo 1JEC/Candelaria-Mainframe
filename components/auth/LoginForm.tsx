@@ -7,8 +7,8 @@ import { signIn } from "next-auth/react";
 export default function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [email, setEmail] = useState("j.candelaria171@gmail.com");
-  const [password, setPassword] = useState("TempPassword123!");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [totp, setTotp] = useState("");
   const [totpRequired, setTotpRequired] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -142,10 +142,6 @@ export default function LoginForm() {
           </button>
         </form>
 
-        {/* Footer */}
-        <p className="text-center text-xs text-gray-500 mt-8">
-          Testaccount: j.candelaria171@gmail.com (opgesteld in Fase 1)
-        </p>
       </div>
     </div>
   );

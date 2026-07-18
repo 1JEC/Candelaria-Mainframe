@@ -4,6 +4,9 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import crypto from "crypto";
 import speakeasy from "speakeasy";
 import QRCode from "qrcode";
+import { db } from "@/lib/db";
+import { users } from "@/drizzle/schema";
+import { eq } from "drizzle-orm";
 
 declare module "next-auth" {
   interface Session {
@@ -16,15 +19,6 @@ declare module "next-auth" {
     };
   }
 }
-
-// Simplified auth for demo - would use real DB in production
-const DEMO_USER = {
-  id: "demo-1",
-  email: "j.candelaria171@gmail.com",
-  password: "TempPassword123!",
-  name: "Johan Candelaria",
-  role: "admin",
-};
 
 export function hashPassword(password: string): string {
   return crypto.createHash("sha256").update(password).digest("hex");
@@ -70,39 +64,43 @@ export const authOptions: NextAuthOptions = {
         totp: { label: "2FA Code", type: "text" },
       },
       async authorize(credentials) {
-        try {
-          // Direct comparison - no trimming to debug
-          if (
-            credentials?.email === DEMO_USER.email &&
-            credentials?.password === DEMO_USER.password
-          ) {
-            return {
-              id: DEMO_USER.id,
-              email: DEMO_USER.email,
-              name: DEMO_USER.name,
-              role: DEMO_USER.role,
-            };
-          }
+        const email = credentials?.email?.trim().toLowerCase();
+        const password = credentials?.password;
 
-          // Fallback: try with trim and lowercase
-          const email = credentials?.email?.trim().toLowerCase();
-          const password = credentials?.password?.trim();
-          const demoEmail = DEMO_USER.email.toLowerCase();
-
-          if (email === demoEmail && password === DEMO_USER.password) {
-            return {
-              id: DEMO_USER.id,
-              email: DEMO_USER.email,
-              name: DEMO_USER.name,
-              role: DEMO_USER.role,
-            };
-          }
-
-          return null;
-        } catch (error) {
-          console.error("Auth error:", error);
+        if (!email || !password) {
           return null;
         }
+
+        const user = await db.query.users.findFirst({
+          where: eq(users.email, email),
+        });
+
+        if (!user || !user.isActive || !user.passwordHash) {
+          return null;
+        }
+
+        const passwordValid = await verifyPassword(password, user.passwordHash);
+        if (!passwordValid) {
+          return null;
+        }
+
+        if (user.totpSecret) {
+          const totp = credentials?.totp;
+          if (!totp) {
+            throw new Error("TOTP_REQUIRED");
+          }
+          const totpValid = await verifyTOTP(user.totpSecret, totp);
+          if (!totpValid) {
+            throw new Error("INVALID_TOTP");
+          }
+        }
+
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role ?? "user",
+        };
       },
     }),
   ],

@@ -8,11 +8,25 @@ import { Resend } from "resend";
 const resend = new Resend(process.env.RESEND_API_KEY || "demo-key");
 const INTAKE_SECRET = process.env.INTAKE_API_KEY || "changeme";
 
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, x-intake-token",
+};
+
+function corsJson(body: unknown, init?: { status?: number }) {
+  return NextResponse.json(body, { ...init, headers: CORS_HEADERS });
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
+}
+
 export async function POST(req: NextRequest) {
   // Verify secret token
   const token = req.headers.get("x-intake-token");
   if (token !== INTAKE_SECRET) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return corsJson({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
@@ -20,10 +34,7 @@ export async function POST(req: NextRequest) {
 
     // Validate required fields
     if (!payload.email || !payload.name || !payload.formType) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
+      return corsJson({ error: "Missing required fields" }, { status: 400 });
     }
 
     // Anti-spam: honeypot check
@@ -141,7 +152,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    return NextResponse.json({
+    return corsJson({
       success: true,
       submissionId,
       leadId,
@@ -149,9 +160,6 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error("Intake error:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return corsJson({ error: "Internal server error" }, { status: 500 });
   }
 }

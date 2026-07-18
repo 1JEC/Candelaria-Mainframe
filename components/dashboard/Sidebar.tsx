@@ -9,6 +9,7 @@ const navSections = [
     section: "COMMAND",
     items: [
       { name: "Dashboard", path: "/dashboard", icon: "📊" },
+      { name: "Offertes", path: "/offertes", icon: "📝" },
       { name: "Social Publisher", path: "/posts", icon: "📱" },
       { name: "Leads", path: "/leads", icon: "👥" },
       { name: "Mailbox", path: "/inbox", icon: "📧" },

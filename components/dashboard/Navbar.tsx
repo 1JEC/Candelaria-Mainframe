@@ -12,6 +12,7 @@ interface NavbarProps {
 
 const ROUTE_LABELS: Record<string, { section: string; title: string }> = {
   "/dashboard": { section: "COMMAND", title: "Dashboard" },
+  "/offertes": { section: "COMMAND", title: "Offertes" },
   "/posts": { section: "COMMAND", title: "Social Publisher" },
   "/leads": { section: "COMMAND", title: "Leads" },
   "/inbox": { section: "COMMAND", title: "Mailbox" },

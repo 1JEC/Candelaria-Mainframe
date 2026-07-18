@@ -221,6 +221,7 @@ export const intakeSubmissions = pgTable(
     convertedToLeadId: text("converted_to_lead_id"),
     spamScore: integer("spam_score").default(0),
     isSpam: boolean("is_spam").default(false),
+    reviewedAt: timestamp("reviewed_at"),
     createdAt: timestamp("created_at").defaultNow(),
   },
   (table) => ({

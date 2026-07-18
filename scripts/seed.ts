@@ -11,6 +11,7 @@ import {
   emails,
   auditLog,
   agentRuns,
+  intakeSubmissions,
 } from "@/drizzle/schema";
 import { hashPassword, generateTOTPSecret } from "@/lib/auth";
 
@@ -381,6 +382,85 @@ async function seed() {
       });
     }
     console.log(`✅ ${auditSeeds.length} audit log entries geseed`);
+
+    // ============ WEBSITE-AANVRAGEN (OFFERTES) ============
+    const intakeSeeds = [
+      {
+        formType: "offerte",
+        email: "hallo@kapsalonmooi.nl",
+        name: "Femke Mooi",
+        company: "Kapsalon Mooi",
+        phone: "0667890123",
+        message:
+          "Branche: Beauty & Verzorging\nBestaande website: Nee, nieuw\nType website: Bedrijfswebsite (5–15 pag.)\nFuncties: WhatsApp / Chat knop, Reviews & testimonials\nLooptijd: 12 maanden\nOplevering: Binnen 4 weken\nOpmerking: Willen graag online kunnen boeken.",
+        daysOld: 0,
+        reviewed: false,
+        isSpam: false,
+      },
+      {
+        formType: "offerte",
+        email: "contact@installatiejansen.nl",
+        name: "Mark Jansen",
+        company: "Installatiebedrijf Jansen",
+        phone: "0634567890",
+        message:
+          "Branche: Installatietechniek\nBestaande website: Vernieuwen\nType website: Portfolio / Showcase\nFuncties: Meertalig (NL + EN)\nLooptijd: 12 maanden\nOplevering: Binnen 8 weken\nOpmerking: Huidige site is verouderd, wil moderne uitstraling.",
+        daysOld: 1,
+        reviewed: false,
+        isSpam: false,
+      },
+      {
+        formType: "gratis_gesprek",
+        email: "info@bakkerijvandijk.nl",
+        name: "Peter van Dijk",
+        company: "Bakkerij Van Dijk",
+        phone: "0612345678",
+        message: "Wil graag vrijblijvend sparren over onderhoud van de huidige website.",
+        daysOld: 3,
+        reviewed: true,
+        isSpam: false,
+      },
+      {
+        formType: "contact",
+        email: "info@tandartsgroenveld.nl",
+        name: "Dr. Lotte Groenveld",
+        company: "Tandartspraktijk Groenveld",
+        phone: "0645678901",
+        message: "Kunnen we de social media kalender voor volgende maand bespreken?",
+        daysOld: 5,
+        reviewed: true,
+        isSpam: false,
+      },
+      {
+        formType: "contact",
+        email: "spam@viagra-deals.ru",
+        name: "xXx",
+        company: null,
+        phone: null,
+        message: "buy cheap viagra now click here",
+        daysOld: 2,
+        reviewed: false,
+        isSpam: true,
+      },
+    ];
+
+    for (const s of intakeSeeds) {
+      await db.insert(intakeSubmissions).values({
+        id: crypto.randomUUID(),
+        formType: s.formType,
+        source: "website",
+        email: s.email,
+        name: s.name,
+        company: s.company,
+        phone: s.phone,
+        message: s.message,
+        isSpam: s.isSpam,
+        spamScore: s.isSpam ? 100 : 0,
+        reviewedAt: s.reviewed ? daysAgo(Math.max(0, s.daysOld - 1)) : null,
+        createdAt: daysAgo(s.daysOld),
+      });
+    }
+    console.log(`✅ ${intakeSeeds.length} website-aanvragen geseed`);
 
     // Summary
     console.log("\n📋 Seed Summary:");

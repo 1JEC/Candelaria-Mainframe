@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -8,33 +9,23 @@ const navSections = [
     section: "COMMAND",
     items: [
       { name: "Dashboard", path: "/dashboard", icon: "📊" },
-      { name: "Tasks", path: "/posts", icon: "✓" },
-      { name: "Calendar", path: "/leads", icon: "📅" },
-      { name: "Routines", path: "/inbox", icon: "🔄" },
-      { name: "Agents", path: "/outreach", icon: "🤖" },
-      { name: "Chats", path: "/audit-log", icon: "💬" },
-      { name: "Sessions", path: "/settings", icon: "👤" },
-      { name: "Skills", path: "/", icon: "⭐" },
+      { name: "Social Publisher", path: "/posts", icon: "📱" },
+      { name: "Leads", path: "/leads", icon: "👥" },
+      { name: "Mailbox", path: "/inbox", icon: "📧" },
+      { name: "Prospecting", path: "/outreach", icon: "🤖" },
+      { name: "Audit Log", path: "/audit-log", icon: "📋" },
     ],
   },
   {
     section: "GROWTH",
     items: [
-      { name: "Revenue", path: "/", icon: "💰" },
-      { name: "Analytics", path: "/", icon: "📈" },
-      { name: "Competitors", path: "/", icon: "🎯" },
-      { name: "Social", path: "/posts", icon: "📱" },
-      { name: "Integrations", path: "/", icon: "🔗" },
-      { name: "Research", path: "/", icon: "🔍" },
+      { name: "Analytics", path: "/analytics", icon: "📈" },
+      { name: "Skills", path: "/skills", icon: "⭐" },
     ],
   },
   {
     section: "INTELLIGENCE",
-    items: [
-      { name: "Braindump", path: "/", icon: "🧠" },
-      { name: "Mind", path: "/", icon: "💡" },
-      { name: "Activity", path: "/", icon: "📊" },
-    ],
+    items: [{ name: "Settings", path: "/settings", icon: "👤" }],
   },
 ];
 
@@ -45,13 +36,13 @@ export function Sidebar() {
     <aside className="hidden md:flex flex-col w-56 bg-white border-r border-gray-200 min-h-screen fixed left-0 top-0 overflow-y-auto">
       {/* Logo Section */}
       <div className="p-6 border-b border-gray-200 sticky top-0 bg-white">
-        <div className="flex items-center gap-2 mb-3">
-          <div className="text-2xl font-bold text-gray-900">∞</div>
+        <Link href="/dashboard" className="flex items-center gap-2 mb-3">
+          <Image src="/logo.png" alt="Candelaria" width={32} height={32} className="h-8 w-8 object-contain" priority />
           <div>
             <p className="text-sm font-bold text-gray-900">187N</p>
             <p className="text-xs text-gray-500">Mission Control</p>
           </div>
-        </div>
+        </Link>
         <div className="flex items-center gap-2 mt-4">
           <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
           <span className="text-xs font-semibold text-green-600">ONLINE</span>

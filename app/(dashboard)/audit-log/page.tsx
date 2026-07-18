@@ -1,18 +1,37 @@
 import { db } from "@/lib/db";
 import { auditLog } from "@/drizzle/schema";
-import { desc, count } from "drizzle-orm";
+import { desc, count, ilike, and } from "drizzle-orm";
+import SearchFilterBar from "@/components/ui/SearchFilterBar";
+import Pagination from "@/components/ui/Pagination";
 
-export default async function AuditLogPage() {
+const PAGE_SIZE = 25;
+
+export default async function AuditLogPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; page?: string }>;
+}) {
+  const params = await searchParams;
+  const page = Math.max(1, parseInt(params.page || "1", 10) || 1);
+  const q = params.q?.trim();
+
+  const where = q ? and(ilike(auditLog.action, `%${q}%`)) : undefined;
+
+  const allLogs = await db.select().from(auditLog).orderBy(desc(auditLog.createdAt)).limit(500);
+  const logCount = await db.select({ count: count() }).from(auditLog);
+
   const logs = await db
     .select()
     .from(auditLog)
+    .where(where)
     .orderBy(desc(auditLog.createdAt))
-    .limit(100);
+    .limit(PAGE_SIZE)
+    .offset((page - 1) * PAGE_SIZE);
 
-  const logCount = await db.select({ count: count() }).from(auditLog);
+  const [{ count: filteredCount }] = await db.select({ count: count() }).from(auditLog).where(where);
+  const totalPages = Math.max(1, Math.ceil(filteredCount / PAGE_SIZE));
 
-  // Group logs by action
-  const actionCounts = logs.reduce(
+  const actionCounts = allLogs.reduce(
     (acc, log) => {
       acc[log.action] = (acc[log.action] || 0) + 1;
       return acc;
@@ -30,13 +49,18 @@ export default async function AuditLogPage() {
       {/* Summary */}
       <div className="grid grid-cols-4 gap-4 mb-8">
         <StatCard label="Total Entries" value={logCount[0]?.count || 0} />
-        <StatCard label="Today" value={logs.filter(l => {
-          const today = new Date();
-          const logDate = l.createdAt ? new Date(l.createdAt) : null;
-          return logDate?.toDateString() === today.toDateString();
-        }).length} />
+        <StatCard
+          label="Today"
+          value={
+            allLogs.filter((l) => {
+              const today = new Date();
+              const logDate = l.createdAt ? new Date(l.createdAt) : null;
+              return logDate?.toDateString() === today.toDateString();
+            }).length
+          }
+        />
         <StatCard label="Unique Actions" value={Object.keys(actionCounts).length} />
-        <StatCard label="Unique Users" value={new Set(logs.map(l => l.userId)).size} />
+        <StatCard label="Unique Users" value={new Set(allLogs.map((l) => l.userId)).size} />
       </div>
 
       {/* Top Actions */}
@@ -46,14 +70,16 @@ export default async function AuditLogPage() {
           {Object.entries(actionCounts)
             .sort(([, a], [, b]) => b - a)
             .slice(0, 5)
-            .map(([action, count]) => (
+            .map(([action, actionCount]) => (
               <div key={action} className="flex justify-between">
                 <span className="text-gray-700">{action}</span>
-                <span className="font-semibold">{count}</span>
+                <span className="font-semibold">{actionCount}</span>
               </div>
             ))}
         </div>
       </div>
+
+      <SearchFilterBar placeholder="Zoek op actie..." />
 
       {/* Full Log */}
       {logs.length > 0 ? (
@@ -73,9 +99,7 @@ export default async function AuditLogPage() {
                 {logs.map((log) => (
                   <tr key={log.id} className="border-b border-gray-200 hover:bg-gray-50">
                     <td className="px-6 py-3 font-medium">{log.action}</td>
-                    <td className="px-6 py-3 text-gray-600">
-                      {log.resourceType}
-                    </td>
+                    <td className="px-6 py-3 text-gray-600">{log.resourceType}</td>
                     <td className="px-6 py-3 text-xs">{log.userId || "system"}</td>
                     <td className="px-6 py-3 text-xs text-gray-500">{log.ip}</td>
                     <td className="px-6 py-3 text-xs text-gray-500">
@@ -89,9 +113,11 @@ export default async function AuditLogPage() {
         </div>
       ) : (
         <div className="p-8 bg-gray-50 rounded-lg border border-dashed border-gray-300 text-center">
-          <p className="text-gray-600">Geen audit log entries nog.</p>
+          <p className="text-gray-600">Geen audit log entries gevonden.</p>
         </div>
       )}
+
+      <Pagination page={page} totalPages={totalPages} />
     </div>
   );
 }

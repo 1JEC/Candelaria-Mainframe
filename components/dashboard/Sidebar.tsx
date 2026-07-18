@@ -39,8 +39,8 @@ export function Sidebar() {
         <Link href="/dashboard" className="flex items-center gap-2 mb-3">
           <Image src="/logo.png" alt="Candelaria" width={32} height={32} className="h-8 w-8 object-contain" priority />
           <div>
-            <p className="text-sm font-bold text-gray-900">187N</p>
-            <p className="text-xs text-gray-500">Mission Control</p>
+            <p className="text-sm font-bold text-gray-900">Candelaria</p>
+            <p className="text-xs text-gray-500">Mainframe</p>
           </div>
         </Link>
         <div className="flex items-center gap-2 mt-4">

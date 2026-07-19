@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { db } from "@/lib/db";
 import { posts, postVersions, leads, outreachTasks, emails } from "@/drizzle/schema";
 import { count, desc, eq, gte, sql } from "drizzle-orm";
+import PostMediaThumbnail from "@/components/posts/PostMediaThumbnail";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -39,6 +40,7 @@ export default async function DashboardPage() {
       contentType: posts.contentType,
       createdAt: posts.createdAt,
       caption: postVersions.caption,
+      mediaUrls: postVersions.mediaUrls,
     })
     .from(posts)
     .leftJoin(postVersions, eq(postVersions.postId, posts.id))
@@ -137,6 +139,7 @@ export default async function DashboardPage() {
                   platforms={post.platforms?.join(", ") || "—"}
                   status={post.status || "draft"}
                   createdAt={post.createdAt}
+                  mediaUrls={post.mediaUrls}
                 />
               ))}
             </div>
@@ -257,11 +260,13 @@ function RecentPost({
   platforms,
   status,
   createdAt,
+  mediaUrls,
 }: {
   caption: string;
   platforms: string;
   status: string;
   createdAt: Date | null;
+  mediaUrls?: string[] | null;
 }) {
   const badgeClasses: Record<string, string> = {
     published: "bg-green-100 text-green-700",
@@ -276,6 +281,11 @@ function RecentPost({
       <p className={`text-xs font-bold ${badgeClasses[status] || badgeClasses.draft} px-2 py-1 rounded inline-block mb-3`}>
         {status.toUpperCase()}
       </p>
+      {mediaUrls && mediaUrls.length > 0 && (
+        <div className="mb-3">
+          <PostMediaThumbnail mediaUrls={mediaUrls} size="md" />
+        </div>
+      )}
       <p className="font-semibold text-gray-900 mb-3 text-sm line-clamp-2">{caption}</p>
       <p className="text-xs text-gray-600">
         {platforms} • {createdAt ? new Date(createdAt).toLocaleDateString("nl-NL") : "—"}

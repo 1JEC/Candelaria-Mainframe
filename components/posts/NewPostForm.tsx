@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useToast } from "@/components/ui/Toast";
 import { createPost } from "@/app/(dashboard)/posts/actions";
+import MediaUploader from "@/components/posts/MediaUploader";
 
 const PLATFORMS = ["Instagram", "Facebook", "LinkedIn", "X", "YouTube"];
 const CONTENT_TYPES = ["image", "video", "carousel", "text"];
@@ -12,6 +13,8 @@ export default function NewPostForm() {
   const [contentType, setContentType] = useState(CONTENT_TYPES[0]);
   const [caption, setCaption] = useState("");
   const [scheduledFor, setScheduledFor] = useState("");
+  const [mediaUrls, setMediaUrls] = useState<string[]>([]);
+  const [mediaUploading, setMediaUploading] = useState(false);
   const [loading, setLoading] = useState(false);
   const { showToast } = useToast();
 
@@ -25,7 +28,7 @@ export default function NewPostForm() {
     e.preventDefault();
     setLoading(true);
     try {
-      await createPost({ platforms, contentType, caption, scheduledFor: scheduledFor || undefined });
+      await createPost({ platforms, contentType, caption, scheduledFor: scheduledFor || undefined, mediaUrls });
       showToast("Post aangemaakt");
     } catch (err) {
       setLoading(false);
@@ -72,6 +75,8 @@ export default function NewPostForm() {
         </select>
       </div>
 
+      <MediaUploader onChange={setMediaUrls} onUploadingChange={setMediaUploading} disabled={loading} />
+
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">Caption</label>
         <textarea
@@ -101,8 +106,12 @@ export default function NewPostForm() {
         </p>
       </div>
 
-      <button type="submit" disabled={loading} className="w-full sm:w-auto btn-primary disabled:opacity-50">
-        {loading ? "Bezig..." : "Post opslaan"}
+      <button
+        type="submit"
+        disabled={loading || mediaUploading}
+        className="w-full sm:w-auto btn-primary disabled:opacity-50"
+      >
+        {loading ? "Bezig..." : mediaUploading ? "Media wordt geüpload..." : "Post opslaan"}
       </button>
     </form>
   );

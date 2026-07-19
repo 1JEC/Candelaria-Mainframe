@@ -13,6 +13,7 @@ export async function createPost(input: {
   contentType: string;
   caption: string;
   scheduledFor?: string;
+  mediaUrls?: string[];
 }) {
   const session = await auth();
   if (!session?.user) throw new Error("Unauthorized");
@@ -43,6 +44,7 @@ export async function createPost(input: {
     postId: id,
     version: 1,
     caption: input.caption,
+    mediaUrls: input.mediaUrls || [],
     createdAt: new Date(),
   });
 

@@ -1,5 +1,6 @@
 import PostStatusSelect from "@/components/posts/PostStatusSelect";
 import DeletePostButton from "@/components/posts/DeletePostButton";
+import PostMediaThumbnail from "@/components/posts/PostMediaThumbnail";
 
 export default function PostCard({
   post,
@@ -10,6 +11,7 @@ export default function PostCard({
     contentType: string | null;
     status: string | null;
     createdAt: Date | null;
+    mediaUrls?: string[] | null;
   };
 }) {
   return (
@@ -18,6 +20,7 @@ export default function PostCard({
         <p className="font-medium text-brand-black">{post.platforms?.join(", ") || "—"}</p>
         <PostStatusSelect id={post.id} status={post.status} />
       </div>
+      <PostMediaThumbnail mediaUrls={post.mediaUrls} size="md" />
       <div className="text-sm text-gray-600 space-y-1">
         <p>{post.contentType}</p>
         <p className="text-xs text-gray-500">

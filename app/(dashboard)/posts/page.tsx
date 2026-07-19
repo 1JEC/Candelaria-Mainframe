@@ -7,6 +7,7 @@ import Pagination from "@/components/ui/Pagination";
 import PostStatusSelect from "@/components/posts/PostStatusSelect";
 import DeletePostButton from "@/components/posts/DeletePostButton";
 import PostCard from "@/components/posts/PostCard";
+import PostMediaThumbnail from "@/components/posts/PostMediaThumbnail";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -45,8 +46,16 @@ export default async function PostsPage({
   const where = conditions.length > 0 ? and(...conditions) : undefined;
 
   const postsList = await db
-    .select()
+    .select({
+      id: posts.id,
+      platforms: posts.platforms,
+      contentType: posts.contentType,
+      status: posts.status,
+      createdAt: posts.createdAt,
+      mediaUrls: postVersions.mediaUrls,
+    })
     .from(posts)
+    .leftJoin(postVersions, and(eq(postVersions.postId, posts.id), eq(postVersions.version, 1)))
     .where(where)
     .orderBy(desc(posts.createdAt))
     .limit(PAGE_SIZE)
@@ -104,6 +113,7 @@ export default async function PostsPage({
             <table className="w-full text-sm">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
+                  <th className="px-6 py-3 text-left font-semibold">Media</th>
                   <th className="px-6 py-3 text-left font-semibold">Platforms</th>
                   <th className="px-6 py-3 text-left font-semibold">Type</th>
                   <th className="px-6 py-3 text-left font-semibold">Status</th>
@@ -114,6 +124,9 @@ export default async function PostsPage({
               <tbody>
                 {postsList.map((post) => (
                   <tr key={post.id} className="border-b border-gray-200">
+                    <td className="px-6 py-3">
+                      <PostMediaThumbnail mediaUrls={post.mediaUrls} />
+                    </td>
                     <td className="px-6 py-3">{post.platforms?.join(", ") || "—"}</td>
                     <td className="px-6 py-3">{post.contentType}</td>
                     <td className="px-6 py-3">

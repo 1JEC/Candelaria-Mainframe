@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { users, integrationCredentials } from "@/drizzle/schema";
+import { users, integrationCredentials, settings } from "@/drizzle/schema";
 import { eq, and } from "drizzle-orm";
 import { auth, generateTOTPSecret, verifyTOTP } from "@/lib/auth";
 import { encryptCredential } from "@/lib/crypto";
@@ -44,6 +44,39 @@ export async function saveIntegrationCredential(provider: string, token: string)
     action: "integration_credential_saved",
     resourceType: "integration_credentials",
     resourceId: provider,
+  });
+
+  revalidatePath("/settings");
+}
+
+export async function updateIntakeAutoReply(formTypes: string[]) {
+  const session = await auth();
+  if (!session?.user) throw new Error("Unauthorized");
+
+  const existing = await db.query.settings.findFirst({
+    where: eq(settings.userId, session.user.id),
+  });
+
+  if (existing) {
+    await db
+      .update(settings)
+      .set({ intakeAutoReplyFormTypes: formTypes, updatedAt: new Date() })
+      .where(eq(settings.id, existing.id));
+  } else {
+    await db.insert(settings).values({
+      id: crypto.randomUUID(),
+      userId: session.user.id,
+      intakeAutoReplyFormTypes: formTypes,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+  }
+
+  await logAudit({
+    userId: session.user.id,
+    action: "intake_autoreply_settings_updated",
+    resourceType: "settings",
+    after: { intakeAutoReplyFormTypes: formTypes },
   });
 
   revalidatePath("/settings");

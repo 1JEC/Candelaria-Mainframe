@@ -1,10 +1,11 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { users, integrationCredentials } from "@/drizzle/schema";
+import { users, integrationCredentials, settings as settingsTable } from "@/drizzle/schema";
 import { eq, and } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import IntegrationConfigButton from "@/components/settings/IntegrationConfigButton";
 import TwoFactorSetup from "@/components/settings/TwoFactorSetup";
+import IntakeAutoReplySettings from "@/components/settings/IntakeAutoReplySettings";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -37,6 +38,10 @@ export default async function SettingsPage() {
   const configuredProviders = new Set(
     credentials.filter((c) => c.isActive).map((c) => c.provider)
   );
+
+  const userSettings = await db.query.settings.findFirst({
+    where: eq(settingsTable.userId, session.user.id),
+  });
 
   return (
     <div>
@@ -121,6 +126,14 @@ export default async function SettingsPage() {
             Handmatige API-key opslag; volledige OAuth-koppeling volgt zodra de app-credentials
             per provider zijn aangeleverd (zie project-CLAUDE.md).
           </p>
+        </section>
+
+        {/* Offertes / intake */}
+        <section className="bg-white p-6 rounded-lg border border-gray-200">
+          <h2 className="text-xl font-semibold text-brand-black mb-4">
+            Automatische bevestigingsmail
+          </h2>
+          <IntakeAutoReplySettings enabledTypes={userSettings?.intakeAutoReplyFormTypes || []} />
         </section>
 
         {/* Database */}

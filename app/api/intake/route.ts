@@ -139,6 +139,40 @@ export async function POST(req: NextRequest) {
         // Don't fail the intake if email fails
       }
 
+      // Automatic confirmation email to the requester, if enabled for this form type
+      try {
+        const userSettings = await db.query.settings.findFirst();
+        const autoReplyEnabled = userSettings?.intakeAutoReplyFormTypes?.includes(payload.formType);
+        const emailDomain = payload.email.split("@")[1]?.toLowerCase();
+        const isSuppressed =
+          userSettings?.suppressionListEmails?.includes(payload.email.toLowerCase()) ||
+          (emailDomain && userSettings?.suppressionListDomains?.includes(emailDomain));
+
+        if (autoReplyEnabled && !isSuppressed) {
+          await resend.emails.send({
+            from: process.env.RESEND_FROM_EMAIL || "noreply@candelaria-agency.com",
+            to: payload.email,
+            subject: "Bedankt voor je aanvraag — Candelaria Agency",
+            html: `
+              <p>Hoi ${payload.name},</p>
+              <p>Bedankt voor je aanvraag bij Candelaria Agency. We hebben 'm goed ontvangen
+              en nemen binnen 1-2 werkdagen contact met je op.</p>
+              <p>Met vriendelijke groet,<br>Team Candelaria Agency</p>
+            `,
+          });
+
+          await logAudit({
+            action: "intake_autoreply_sent",
+            resourceType: "intake_submission",
+            resourceId: submissionId,
+            metadata: { email: payload.email, formType: payload.formType },
+          });
+        }
+      } catch (autoReplyError) {
+        console.error("Failed to send auto-reply:", autoReplyError);
+        // Don't fail the intake if the auto-reply fails
+      }
+
       // Log audit
       await logAudit({
         action: "intake_submitted",

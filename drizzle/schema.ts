@@ -70,6 +70,7 @@ export const settings = pgTable("settings", {
   autoPublishCategories: text("auto_publish_categories").array(),
   outreachApprovalRequired: boolean("outreach_approval_required").default(true),
   emailAutoReplyCategories: text("email_auto_reply_categories").array(),
+  intakeAutoReplyFormTypes: text("intake_auto_reply_form_types").array(),
   suppressionListDomains: text("suppression_list_domains").array(),
   suppressionListEmails: text("suppression_list_emails").array(),
   createdAt: timestamp("created_at").defaultNow(),

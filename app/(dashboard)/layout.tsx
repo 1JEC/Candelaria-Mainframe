@@ -1,4 +1,7 @@
 import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { users } from "@/drizzle/schema";
+import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { Navbar } from "@/components/dashboard/Navbar";
 import { Sidebar } from "@/components/dashboard/Sidebar";
@@ -17,6 +20,17 @@ export default async function DashboardLayout({
   const session = await auth();
 
   if (!session?.user) {
+    redirect("/login");
+  }
+
+  // A JWT session can outlive the user it was minted for (e.g. after an auth
+  // rework, or if the account was removed). Catch that here instead of
+  // letting every downstream query/insert fail on a foreign key violation.
+  const userExists = await db.query.users.findFirst({
+    where: eq(users.id, session.user.id),
+    columns: { id: true },
+  });
+  if (!userExists) {
     redirect("/login");
   }
 

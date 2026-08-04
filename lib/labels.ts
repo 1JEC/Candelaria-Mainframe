@@ -2,7 +2,9 @@ import type { Tone } from '@/components/ui/Pill'
 import type {
   ConversationOutcome,
   ConversationSentiment,
+  DeviceType,
   EscalationStatus,
+  LeadStatus,
   RequestPriority,
   RequestStatus,
 } from '@/db/schema'
@@ -75,6 +77,20 @@ export const requestPriorityMeta: Record<
   normaal: { label: nl.requests.priority.normaal, tone: 'neutral' },
   hoog: { label: nl.requests.priority.hoog, tone: 'warning' },
   urgent: { label: nl.requests.priority.urgent, tone: 'danger' },
+}
+
+export const leadStatusMeta: Record<LeadStatus, { label: string; tone: Tone }> = {
+  new: { label: nl.websiteLeads.status.new, tone: 'accent' },
+  contacted: { label: nl.websiteLeads.status.contacted, tone: 'warning' },
+  booked: { label: nl.websiteLeads.status.booked, tone: 'brand' },
+  won: { label: nl.websiteLeads.status.won, tone: 'success' },
+  lost: { label: nl.websiteLeads.status.lost, tone: 'neutral' },
+}
+
+export const deviceTypeLabel: Record<DeviceType, string> = {
+  mobile: nl.analytics.deviceType.mobile,
+  tablet: nl.analytics.deviceType.tablet,
+  desktop: nl.analytics.deviceType.desktop,
 }
 
 /** Channels arrive as free text from ingest, so this falls back to the raw value. */

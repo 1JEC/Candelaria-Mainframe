@@ -15,6 +15,13 @@
       "when": 1785752871306,
       "tag": "0001_mysterious_scarlet_witch",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1785847283427,
+      "tag": "0002_overrated_kang",
+      "breakpoints": true
     }
   ]
 }

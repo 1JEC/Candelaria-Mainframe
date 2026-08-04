@@ -1,4 +1,5 @@
 import {
+  bigserial,
   boolean,
   index,
   integer,
@@ -381,6 +382,109 @@ export const changelogEntries = pgTable(
   (t) => [index('changelog_org_created_idx').on(t.orgId, t.createdAt)],
 )
 
+/* ------------------------------------------------------------------ */
+/* Website lead intake + owned analytics                               */
+/*                                                                      */
+/* Candelaria's OWN data about candelaria-agency.netlify.app visitors  */
+/* and form submissions — never a client's. Deliberately NOT org-scoped */
+/* (no org_id) and gated admin-only at the module level (see            */
+/* lib/rbac.ts: MODULE_ACCESS['website-leads'|'analytics']).            */
+/* ------------------------------------------------------------------ */
+
+export const leadStatus = pgEnum('lead_status', [
+  'new',
+  'contacted',
+  'booked',
+  'won',
+  'lost',
+])
+
+export const deviceType = pgEnum('device_type', [
+  'mobile',
+  'tablet',
+  'desktop',
+])
+
+export const leads = pgTable(
+  'leads',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    source: text('source').notNull().default('candelaria-website'),
+    formName: text('form_name').notNull().default('book-audit-call'),
+    name: text('name').notNull(),
+    email: text('email').notNull(),
+    phone: text('phone'),
+    company: text('company'),
+    websiteUrl: text('website_url'),
+    message: text('message'),
+    /** Full raw submission body, for fields not modeled above. */
+    payload: jsonb('payload').notNull().$type<Record<string, unknown>>(),
+    status: leadStatus('status').notNull().default('new'),
+    /**
+     * Full IP address. Legal basis: legitimate interest (security/fraud
+     * prevention on an active form submission) — unlike `pageviews`, this is
+     * never truncated. See DECISIONS.md privacy section.
+     */
+    ipAddress: text('ip_address'),
+    ipCountry: text('ip_country'),
+    ipCity: text('ip_city'),
+    /** Links this lead to its pre-submission pageview journey. */
+    visitorHash: text('visitor_hash'),
+    utmSource: text('utm_source'),
+    utmMedium: text('utm_medium'),
+    utmCampaign: text('utm_campaign'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index('leads_created_idx').on(t.createdAt),
+    index('leads_status_idx').on(t.status),
+    index('leads_visitor_idx').on(t.visitorHash),
+    index('leads_ip_created_idx').on(t.ipAddress, t.createdAt),
+  ],
+)
+
+export const pageviews = pgTable(
+  'pageviews',
+  {
+    id: bigserial('id', { mode: 'number' }).primaryKey(),
+    site: text('site').notNull().default('candelaria-agency'),
+    path: text('path').notNull(),
+    referrer: text('referrer'),
+    /** Parsed hostname, e.g. 'google.com', 'linkedin.com', '(direct)'. */
+    referrerDomain: text('referrer_domain'),
+    utmSource: text('utm_source'),
+    utmMedium: text('utm_medium'),
+    utmCampaign: text('utm_campaign'),
+    country: text('country'),
+    city: text('city'),
+    region: text('region'),
+    /**
+     * Masked last IPv4 octet / collapsed IPv6 tail — never the full address.
+     * See lib/ip.ts:truncateIp and DECISIONS.md privacy section.
+     */
+    ipTruncated: text('ip_truncated'),
+    /** Daily-rotating SHA-256 hash — see lib/visitor-hash.ts. */
+    visitorHash: text('visitor_hash'),
+    /** Client-generated per-tab session id (sessionStorage on the website). */
+    sessionId: text('session_id'),
+    deviceType: deviceType('device_type'),
+    browser: text('browser'),
+    os: text('os'),
+    userAgent: text('user_agent'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index('pageviews_created_idx').on(t.createdAt),
+    index('pageviews_country_idx').on(t.country),
+    index('pageviews_session_idx').on(t.sessionId),
+    index('pageviews_visitor_idx').on(t.visitorHash),
+  ],
+)
+
 export type Organization = typeof organizations.$inferSelect
 export type User = typeof users.$inferSelect
 export type AuditLogEntry = typeof auditLog.$inferSelect
@@ -393,6 +497,8 @@ export type Escalation = typeof escalations.$inferSelect
 export type Request = typeof requests.$inferSelect
 export type RequestComment = typeof requestComments.$inferSelect
 export type ChangelogEntry = typeof changelogEntries.$inferSelect
+export type Lead = typeof leads.$inferSelect
+export type Pageview = typeof pageviews.$inferSelect
 
 export type UserRole = (typeof userRole.enumValues)[number]
 export type RequestStatus = (typeof requestStatus.enumValues)[number]
@@ -401,3 +507,5 @@ export type EscalationStatus = (typeof escalationStatus.enumValues)[number]
 export type ConversationOutcome = (typeof conversationOutcome.enumValues)[number]
 export type ConversationSentiment =
   (typeof conversationSentiment.enumValues)[number]
+export type LeadStatus = (typeof leadStatus.enumValues)[number]
+export type DeviceType = (typeof deviceType.enumValues)[number]

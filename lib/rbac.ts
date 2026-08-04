@@ -16,17 +16,28 @@ export const MODULES = [
   'library',
   'requests',
   'settings',
+  'website-leads',
+  'analytics',
 ] as const
 
 export type ModuleKey = (typeof MODULES)[number]
 
 const ALL_MODULES = [...MODULES]
 
+/**
+ * `website-leads` and `analytics` are Candelaria's OWN data about its
+ * marketing website (candelaria-agency.netlify.app) — not any client's, and
+ * not org-scoped in the schema. They must never appear for a client role,
+ * regardless of what `ALL_MODULES` contains.
+ */
+const STAFF_ONLY_MODULES: readonly ModuleKey[] = ['website-leads', 'analytics']
+
 export const MODULE_ACCESS: Record<UserRole, readonly ModuleKey[]> = {
   // Candelaria staff — everything.
   admin: ALL_MODULES,
-  // Client owner — everything for their own organization.
-  client_manager: ALL_MODULES,
+  // Client owner — everything for their own organization, excluding
+  // Candelaria's internal-only modules.
+  client_manager: ALL_MODULES.filter((m) => !STAFF_ONLY_MODULES.includes(m)),
   // Read-only — dashboard, library and reports only.
   client_viewer: ['dashboard', 'library'],
 }

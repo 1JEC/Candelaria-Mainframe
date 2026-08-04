@@ -255,6 +255,38 @@ export const nl = {
     },
   },
 
+  settings: {
+    tokens: {
+      title: 'Ingest-tokens',
+      subtitle:
+        'Voor koppelingen die gespreksdata naar dit portaal sturen (agent-runtimes, automatiseringen).',
+      newButton: 'Genereer nieuwe token',
+      generating: 'Bezig met genereren…',
+      namePlaceholder: 'Naam voor deze token, bv. "Productie-agent"',
+      revealTitle: 'Nieuwe token aangemaakt',
+      revealWarning:
+        'Deze token wordt maar één keer getoond. Kopieer en bewaar hem nu ergens veilig.',
+      copy: 'Kopiëren',
+      copied: 'Gekopieerd',
+      done: 'Klaar',
+      colName: 'Naam',
+      colStatus: 'Status',
+      colCreated: 'Aangemaakt',
+      colLastUsed: 'Laatst gebruikt',
+      neverUsed: 'Nog niet gebruikt',
+      statusActive: 'Actief',
+      statusRevoked: 'Ingetrokken',
+      revoke: 'Intrekken',
+      revokeConfirm: 'Weet je het zeker?',
+      revoking: 'Bezig…',
+      empty: 'Nog geen tokens aangemaakt.',
+      errors: {
+        nameRequired: 'Geef de token een naam.',
+        generic: 'Er ging iets mis. Probeer het opnieuw.',
+      },
+    },
+  },
+
   changelog: {
     title: 'Wat is er gebeurd',
     addTitle: 'Nieuwe update',

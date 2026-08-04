@@ -14,8 +14,11 @@ import { nl } from '@/lib/nl'
 type TokenRow = {
   id: string
   name: string
-  createdAt: Date
-  lastUsedAt: Date | null
+  /** Pre-formatted on the server (page.tsx) — formatting a Date at render
+   * time in a client component causes a hydration mismatch when the server
+   * (UTC) and the browser (local timezone) compute different strings. */
+  createdAtLabel: string
+  lastUsedAtLabel: string
   revokedAt: Date | null
 }
 
@@ -157,8 +160,8 @@ const NewTokenForm = ({
           {
             id: result.id,
             name: result.name,
-            createdAt: new Date(result.createdAt),
-            lastUsedAt: null,
+            createdAtLabel: formatDateTime(new Date(result.createdAt)),
+            lastUsedAtLabel: t.neverUsed,
             revokedAt: null,
           },
           result.token,
@@ -260,10 +263,10 @@ const TokenRowItem = ({
         </Pill>
       </td>
       <td className="px-4 py-3 font-mono text-caption text-muted">
-        {formatDateTime(row.createdAt)}
+        {row.createdAtLabel}
       </td>
       <td className="px-4 py-3 font-mono text-caption text-muted">
-        {row.lastUsedAt ? formatDateTime(row.lastUsedAt) : t.neverUsed}
+        {row.lastUsedAtLabel}
       </td>
       <td className="px-4 py-3 text-right">
         {!revoked && canMutate && (

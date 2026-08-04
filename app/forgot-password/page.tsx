@@ -1,13 +1,10 @@
-import { Suspense } from 'react'
-
-import { LoginForm } from '@/components/auth/LoginForm'
+import { ForgotPasswordForm } from '@/components/auth/ForgotPasswordForm'
 import { Wordmark } from '@/components/brand/Logo'
 import { nl } from '@/lib/nl'
 
-export default function LoginPage() {
+export default function ForgotPasswordPage() {
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-16">
-      {/* Grid motif — login screen only, never behind data */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 bg-grid-pattern bg-grid opacity-60"
@@ -26,25 +23,21 @@ export default function LoginPage() {
         <div className="card p-8 shadow-lg">
           <p className="label">{nl.login.eyebrow}</p>
           <h1 className="display mt-3 text-h1 text-foreground">
-            {nl.login.title}
+            {nl.forgotPassword.title}
           </h1>
-          <p className="mt-2 text-body-sm text-muted">{nl.login.subtitle}</p>
+          <p className="mt-2 text-body-sm text-muted">{nl.forgotPassword.subtitle}</p>
 
-          <Suspense fallback={<div className="mt-8 h-[260px]" />}>
-            <LoginForm />
-          </Suspense>
+          <ForgotPasswordForm />
 
           <a
-            href="/forgot-password"
+            href="/login"
             className="mt-6 block text-center text-body-sm text-muted transition-colors duration-fast hover:text-foreground"
           >
-            {nl.login.forgot}
+            {nl.forgotPassword.backToLogin}
           </a>
         </div>
 
-        <p className="mt-8 text-center text-caption text-muted">
-          {nl.login.footer}
-        </p>
+        <p className="mt-8 text-center text-caption text-muted">{nl.login.footer}</p>
       </div>
     </main>
   )

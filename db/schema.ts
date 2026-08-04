@@ -73,6 +73,10 @@ export const users = pgTable(
     name: text('name').notNull(),
     role: userRole('role').notNull().default('client_viewer'),
     passwordHash: text('password_hash').notNull(),
+    passwordResetTokenHash: text('password_reset_token_hash'),
+    passwordResetExpiresAt: timestamp('password_reset_expires_at', {
+      withTimezone: true,
+    }),
     lastLogin: timestamp('last_login', { withTimezone: true }),
     isDemo: boolean('is_demo').notNull().default(false),
     createdAt: timestamp('created_at', { withTimezone: true })

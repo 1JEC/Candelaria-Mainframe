@@ -25,6 +25,28 @@ export const nl = {
     errorGeneric: 'Inloggen is niet gelukt. Probeer het opnieuw.',
   },
 
+  forgotPassword: {
+    title: 'Wachtwoord vergeten',
+    subtitle: 'Vul je e-mailadres in, dan sturen we een link om je wachtwoord te resetten.',
+    submit: 'Verstuur resetlink',
+    submitting: 'Bezig met versturen…',
+    sent: 'Als dit e-mailadres bekend is, is er een link verstuurd om het wachtwoord te resetten.',
+    backToLogin: 'Terug naar inloggen',
+    errorGeneric: 'Er ging iets mis. Probeer het opnieuw.',
+  },
+
+  resetPassword: {
+    title: 'Nieuw wachtwoord instellen',
+    subtitle: 'Kies een nieuw wachtwoord voor je account.',
+    newPassword: 'Nieuw wachtwoord',
+    confirmPassword: 'Herhaal wachtwoord',
+    submit: 'Wachtwoord instellen',
+    submitting: 'Bezig met opslaan…',
+    missingToken: 'Deze link is ongeldig. Vraag een nieuwe resetlink aan.',
+    errorMismatch: 'De wachtwoorden komen niet overeen.',
+    errorGeneric: 'Er ging iets mis. Probeer het opnieuw.',
+  },
+
   nav: {
     dashboard: 'Dashboard',
     agents: 'AI Agents',

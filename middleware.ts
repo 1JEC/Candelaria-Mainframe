@@ -15,16 +15,17 @@ export default auth((req) => {
   const path = nextUrl.pathname
 
   const isLogin = path === '/login'
+  const isPublic = isLogin || path === '/forgot-password' || path === '/reset-password'
 
   if (!session?.user) {
-    if (isLogin) return NextResponse.next()
+    if (isPublic) return NextResponse.next()
     const url = new URL('/login', nextUrl)
     if (path !== '/') url.searchParams.set('callbackUrl', path)
     return NextResponse.redirect(url)
   }
 
-  // Signed in — never show the login screen again.
-  if (isLogin) {
+  // Signed in — never show the login/reset screens again.
+  if (isPublic) {
     return NextResponse.redirect(new URL('/dashboard', nextUrl))
   }
 

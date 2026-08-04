@@ -1,0 +1,87 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    @apply bg-background font-sans text-body text-foreground;
+  }
+
+  ::selection {
+    background-color: theme('colors.flame.line');
+    color: theme('colors.paper');
+  }
+
+  :focus-visible {
+    outline: 2px solid theme('colors.flame.DEFAULT');
+    outline-offset: 2px;
+  }
+
+  button:focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: theme('colors.ink.DEFAULT');
+  }
+  ::-webkit-scrollbar-thumb {
+    background: theme('colors.ink.line');
+    border-radius: theme('borderRadius.sm');
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: theme('colors.ink.mute');
+  }
+}
+
+@layer components {
+  /* Eyebrow / small-caps label — carried over from the marketing site */
+  .label {
+    @apply font-mono text-label uppercase tracking-label text-muted;
+  }
+
+  .display {
+    @apply font-serif font-normal;
+  }
+
+  .card {
+    @apply rounded-lg border border-border bg-surface p-5;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-primary px-6 py-3 text-body font-medium text-primary-foreground transition-colors duration-fast hover:bg-flame-hover;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-border px-6 py-3 text-body font-medium text-foreground transition-colors duration-fast hover:border-cream/40;
+  }
+
+  .field {
+    @apply w-full rounded-md border border-border bg-white/[0.03] px-4 py-3 text-body text-foreground transition-colors duration-fast placeholder:text-muted focus:border-flame-line focus:outline-none;
+  }
+
+  .nav-item {
+    @apply flex items-center gap-3 rounded-md px-3 py-2 text-body-sm text-muted transition-colors duration-fast hover:bg-surface-raised hover:text-foreground;
+  }
+
+  .nav-item-active {
+    @apply bg-surface-raised text-foreground;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

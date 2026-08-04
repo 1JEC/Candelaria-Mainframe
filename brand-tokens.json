@@ -1,0 +1,179 @@
+{
+  "$schema": "./brand-tokens.schema.json",
+  "meta": {
+    "name": "Candelaria Mainframe",
+    "derivedFrom": "~/Desktop/Candelaria agency/candelaria-website-demo-187n",
+    "sourceFiles": [
+      "tailwind.config.ts",
+      "app/globals.css",
+      "app/layout.tsx",
+      "components/sections/Navbar.tsx",
+      "public/logo.png"
+    ],
+    "intent": "Same brand DNA as the marketing site (warm dark, flame accent, gold monogram) but calmer and denser: an operations dashboard, not a cinematic landing page.",
+    "accentPolicy": "Flame is the only interactive accent. Gold is reserved for brand moments (monogram, login, report headers) and never used for buttons, links or focus states."
+  },
+
+  "color": {
+    "ink": {
+      "DEFAULT": "#1a1512",
+      "soft": "#221c17",
+      "line": "#332a23",
+      "mute": "#9a8f86",
+      "raised": "#2a221c"
+    },
+    "cream": {
+      "DEFAULT": "#f5f2ed",
+      "deep": "#ebe6de",
+      "line": "#ddd6cb"
+    },
+    "paper": "#ffffff",
+    "flame": {
+      "DEFAULT": "#e8552a",
+      "hover": "#d1471f",
+      "soft": "rgba(232, 85, 42, 0.12)",
+      "line": "rgba(232, 85, 42, 0.35)",
+      "glow": "rgba(232, 85, 42, 0.25)"
+    },
+    "moss": {
+      "DEFAULT": "#4a9d5f",
+      "hover": "#3d8450",
+      "soft": "rgba(74, 157, 95, 0.15)"
+    },
+    "gold": {
+      "shadow": "#af7912",
+      "deep": "#bd8f2f",
+      "DEFAULT": "#cba23c",
+      "light": "#deba57",
+      "highlight": "#f7d671",
+      "soft": "rgba(203, 162, 60, 0.12)",
+      "line": "rgba(203, 162, 60, 0.35)"
+    },
+    "semantic": {
+      "background": "#1a1512",
+      "surface": "#221c17",
+      "surfaceRaised": "#2a221c",
+      "border": "#332a23",
+      "textPrimary": "#f5f2ed",
+      "textMuted": "#9a8f86",
+      "primary": "#e8552a",
+      "primaryForeground": "#ffffff",
+      "success": "#4a9d5f",
+      "warning": "#cba23c",
+      "danger": "#d1471f",
+      "info": "#9a8f86"
+    }
+  },
+
+  "font": {
+    "serif": {
+      "family": "Newsreader",
+      "cssVar": "--font-newsreader",
+      "stack": ["var(--font-newsreader)", "Georgia", "serif"],
+      "weights": [300, 400, 500],
+      "styles": ["normal", "italic"],
+      "role": "Display headings, page titles, KPI figures"
+    },
+    "sans": {
+      "family": "Inter",
+      "cssVar": "--font-inter",
+      "stack": ["var(--font-inter)", "system-ui", "sans-serif"],
+      "weights": [400, 500, 600],
+      "role": "Body copy, UI, tables, forms"
+    },
+    "mono": {
+      "family": "JetBrains Mono",
+      "cssVar": "--font-mono",
+      "stack": ["var(--font-mono)", "ui-monospace", "monospace"],
+      "weights": [400, 500],
+      "role": "Eyebrow labels, pills, badges, IDs, numeric columns"
+    }
+  },
+
+  "typeScale": {
+    "label": { "size": "11px", "tracking": "0.18em", "transform": "uppercase", "font": "mono" },
+    "caption": { "size": "12px", "lineHeight": "1.4", "font": "sans" },
+    "body-sm": { "size": "13px", "lineHeight": "1.5", "font": "sans" },
+    "body": { "size": "14px", "lineHeight": "1.6", "font": "sans" },
+    "body-lg": { "size": "16px", "lineHeight": "1.6", "font": "sans" },
+    "h3": { "size": "18px", "lineHeight": "1.3", "font": "sans", "weight": 500 },
+    "h2": { "size": "24px", "lineHeight": "1.2", "font": "serif", "tracking": "-0.02em" },
+    "h1": { "size": "32px", "lineHeight": "1.1", "font": "serif", "tracking": "-0.02em" },
+    "kpi": { "size": "40px", "lineHeight": "1.05", "font": "serif", "tracking": "-0.02em" },
+    "display": { "size": "56px", "lineHeight": "1.05", "font": "serif", "tracking": "-0.02em" }
+  },
+
+  "radius": {
+    "sm": "6px",
+    "md": "8px",
+    "lg": "12px",
+    "xl": "16px",
+    "full": "9999px",
+    "usage": {
+      "button": "full",
+      "pill": "full",
+      "input": "md",
+      "card": "lg",
+      "panel": "xl"
+    }
+  },
+
+  "shadow": {
+    "none": "none",
+    "sm": "0 1px 2px 0 rgba(0, 0, 0, 0.30)",
+    "md": "0 2px 8px -1px rgba(0, 0, 0, 0.40)",
+    "lg": "0 8px 24px -6px rgba(0, 0, 0, 0.50)",
+    "focus": "0 0 0 2px #e8552a",
+    "glowFlame": "0 0 80px 0 rgba(232, 85, 42, 0.25)",
+    "glowGold": "0 0 60px 0 rgba(203, 162, 60, 0.18)"
+  },
+
+  "spacing": {
+    "unit": "4px",
+    "sidebarWidth": "248px",
+    "sidebarCollapsed": "68px",
+    "topbarHeight": "64px",
+    "contentMaxWidth": "1400px",
+    "contentPadding": { "mobile": "16px", "desktop": "32px" },
+    "cardPadding": "20px",
+    "sectionGap": "24px"
+  },
+
+  "motion": {
+    "duration": { "fast": "150ms", "base": "200ms", "slow": "400ms" },
+    "easing": { "snappy": "cubic-bezier(0.4, 0, 0.2, 1)" },
+    "note": "Restrained. Fades and 150-200ms colour transitions only. No parallax, marquees or meteors from the marketing site.",
+    "reducedMotion": "Honour prefers-reduced-motion: zero all durations."
+  },
+
+  "motif": {
+    "streaks": "linear-gradient(115deg, rgba(255,247,238,0.055) 0%, rgba(255,247,238,0) 38%), linear-gradient(285deg, rgba(232,85,42,0.07) 0%, rgba(232,85,42,0) 45%)",
+    "gridPattern": {
+      "image": "linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px)",
+      "size": "34px 34px",
+      "usage": "Login screen only. Never behind data tables or charts."
+    },
+    "selection": { "background": "rgba(232, 85, 42, 0.35)", "color": "#ffffff" },
+    "focusRing": { "outline": "2px solid #e8552a", "offset": "2px" },
+    "scrollbar": { "width": "10px", "track": "#1a1512", "thumb": "#3a3029", "thumbHover": "#4a3f36", "radius": "6px" }
+  },
+
+  "logo": {
+    "monogram": "/brand/logo.png",
+    "monogramTransparent": "/brand/logo-transparent.png",
+    "monogramTransparentWebp": "/brand/logo-transparent.webp",
+    "monogramWide": "/brand/logo-mark.png",
+    "monogramWideWebp": "/brand/logo-mark.webp",
+    "wordmark": {
+      "type": "text",
+      "text": "Candelaria",
+      "font": "serif",
+      "note": "No wordmark asset exists. The site renders it as live Newsreader text next to the monogram; the portal does the same."
+    },
+    "intrinsic": {
+      "logo.png": { "w": 468, "h": 400 },
+      "logo-mark.png": { "w": 596, "h": 213 },
+      "logo-transparent.png": { "w": 1024, "h": 1024 }
+    }
+  }
+}

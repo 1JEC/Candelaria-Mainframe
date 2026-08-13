@@ -318,6 +318,8 @@ export const leads = pgTable(
     kvkNumber: varchar("kvk_number", { length: 20 }),
     sbiCode: varchar("sbi_code", { length: 10 }),
     sector: varchar("sector", { length: 50 }),
+    street: varchar("street", { length: 255 }),
+    postcode: varchar("postcode", { length: 10 }),
     city: varchar("city", { length: 100 }),
     province: varchar("province", { length: 100 }),
     phoneE164: varchar("phone_e164", { length: 20 }),

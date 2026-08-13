@@ -291,7 +291,11 @@ export const leads = pgTable(
   "leads",
   {
     id: text("id").primaryKey(),
-    email: varchar("email", { length: 255 }).notNull(),
+    // Nullable: the leads agent (MODULE F) may create a lead with only a
+    // phone or contact-form channel — never invent an email to satisfy a
+    // not-null constraint. Postgres allows multiple NULLs under a unique
+    // constraint, so this stays safe for the older email-required call sites.
+    email: varchar("email", { length: 255 }),
     name: varchar("name", { length: 255 }),
     company: varchar("company", { length: 255 }),
     website: text("website"),
@@ -308,11 +312,33 @@ export const leads = pgTable(
     nextFollowUpAt: timestamp("next_follow_up_at"),
     createdAt: timestamp("created_at").defaultNow(),
     updatedAt: timestamp("updated_at").defaultNow(),
+    // ---- MODULE F: LEADS AGENT additions ----
+    registrableDomain: text("registrable_domain").unique(),
+    legalName: varchar("legal_name", { length: 255 }),
+    kvkNumber: varchar("kvk_number", { length: 20 }),
+    sbiCode: varchar("sbi_code", { length: 10 }),
+    sector: varchar("sector", { length: 50 }),
+    city: varchar("city", { length: 100 }),
+    province: varchar("province", { length: 100 }),
+    phoneE164: varchar("phone_e164", { length: 20 }),
+    emailGeneral: varchar("email_general", { length: 255 }),
+    contactFormUrl: text("contact_form_url"),
+    socialsJson: jsonb("socials_json"),
+    fitScore: integer("fit_score").default(0),
+    painScore: integer("pain_score").default(0),
+    totalScore: integer("total_score").default(0),
+    priority: varchar("priority", { length: 1 }), // A|B|C
+    recommendedOffer: varchar("recommended_offer", { length: 100 }),
+    recommendedChannel: varchar("recommended_channel", { length: 50 }),
+    firstSeenAt: timestamp("first_seen_at"),
+    lastSeenAt: timestamp("last_seen_at"),
+    auditedAt: timestamp("audited_at"),
   },
   (table) => ({
     emailUnique: unique("leads_email_unique").on(table.email),
     statusIdx: index("leads_status_idx").on(table.status),
     scoreIdx: index("leads_score_idx").on(table.score),
+    totalScoreIdx: index("leads_total_score_idx").on(table.totalScore),
   })
 );
 
@@ -385,6 +411,14 @@ export const outreachMessages = pgTable(
     optedOut: boolean("opted_out").default(false),
     optedOutAt: timestamp("opted_out_at"),
     createdAt: timestamp("created_at").defaultNow(),
+    // ---- MODULE F additions: doubles as the sequenced `messages` table.
+    // Soft references (no FK) to lead_agent's enrollments/mailboxes tables
+    // in schema-leads.ts — avoids a circular import between the two files.
+    enrollmentId: text("enrollment_id"),
+    mailboxId: text("mailbox_id"),
+    step: integer("step"),
+    scheduledFor: timestamp("scheduled_for"),
+    providerMessageId: text("provider_message_id"),
   },
   (table) => ({
     leadIdx: index("outreach_lead_idx").on(table.leadId),
@@ -412,6 +446,10 @@ export const agentRuns = pgTable(
     completedAt: timestamp("completed_at"),
     duration: integer("duration"),
     createdAt: timestamp("created_at").defaultNow(),
+    // MODULE F: soft reference to lead_runs.id (schema-leads.ts) — this
+    // table doubles as the ai_usage log for the leads agent's AI calls.
+    leadRunId: text("lead_run_id"),
+    purpose: varchar("purpose", { length: 50 }),
   },
   (table) => ({
     typeIdx: index("runs_type_idx").on(table.agentType),
@@ -486,3 +524,9 @@ export const intakeSubmissionsRelations = relations(
     }),
   })
 );
+
+// ============ MODULE F: LEADS AGENT ============
+// New tables live in schema-leads.ts to keep this file under the repo's
+// 500-line convention; re-exported here so `import * as schema from
+// "@/drizzle/schema"` (lib/db.ts) picks them up unchanged.
+export * from "./schema-leads";

@@ -7,7 +7,7 @@ export default function LeadCard({
   lead: {
     id: string;
     name: string | null;
-    email: string;
+    email: string | null;
     company: string | null;
     status: string | null;
     score: number | null;
@@ -39,7 +39,7 @@ export default function LeadCard({
       </div>
       <div className="flex items-center justify-between pt-1 border-t border-gray-100">
         <span className="text-xs text-gray-500">{lead.source}</span>
-        <DeleteLeadButton id={lead.id} name={lead.name || lead.email} />
+        <DeleteLeadButton id={lead.id} name={lead.name || lead.email || "—"} />
       </div>
     </div>
   );

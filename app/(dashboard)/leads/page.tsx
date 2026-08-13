@@ -142,7 +142,7 @@ export default async function LeadsPage({
                     </td>
                     <td className="px-6 py-3 text-xs text-gray-500">{lead.source}</td>
                     <td className="px-6 py-3">
-                      <DeleteLeadButton id={lead.id} name={lead.name || lead.email} />
+                      <DeleteLeadButton id={lead.id} name={lead.name || lead.email || "—"} />
                     </td>
                   </tr>
                 ))}

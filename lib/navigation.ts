@@ -8,6 +8,7 @@ export const navSections = [
       { name: "Leads", path: "/leads", icon: "👥" },
       { name: "Mailbox", path: "/inbox", icon: "📧" },
       { name: "Prospecting", path: "/outreach", icon: "🤖" },
+      { name: "Leads Agent", path: "/leads/agent", icon: "🎯", adminOnly: true },
       { name: "Audit Log", path: "/audit-log", icon: "📋" },
     ],
   },

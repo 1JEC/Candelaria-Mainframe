@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { navSections } from "@/lib/navigation";
 
-export function Sidebar() {
+export function Sidebar({ role }: { role?: string } = {}) {
   const pathname = usePathname();
 
   return (
@@ -31,7 +31,7 @@ export function Sidebar() {
           <div key={idx} className="space-y-3">
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider px-3">{section.section}</p>
             <div className="space-y-1">
-              {section.items.map((item) => {
+              {section.items.filter((item) => !item.adminOnly || role === "admin").map((item) => {
                 const isActive = pathname === item.path || (item.path !== "/" && pathname.includes(item.path));
                 return (
                   <Link

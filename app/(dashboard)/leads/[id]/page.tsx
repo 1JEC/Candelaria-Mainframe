@@ -37,10 +37,10 @@ export default async function LeadDetailPage({
 
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-brand-black">{lead.name || lead.email}</h1>
+          <h1 className="text-3xl font-bold text-brand-black">{lead.name || lead.email || lead.company || "—"}</h1>
           <p className="text-gray-600">{lead.email}</p>
         </div>
-        <DeleteLeadButton id={lead.id} name={lead.name || lead.email} redirectTo="/leads" />
+        <DeleteLeadButton id={lead.id} name={lead.name || lead.email || "—"} redirectTo="/leads" />
       </div>
 
       <LeadEditForm lead={lead} />

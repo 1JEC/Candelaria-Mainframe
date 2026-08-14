@@ -71,3 +71,24 @@ Full inventory was done via a repo-exploration pass. Key findings that change ho
 - Real byte-accurate image weight measurement.
 - Headless-browser fallback for JS-rendered pages (needs a Netlify-compatible headless Chromium setup).
 - Cross-invocation-aware crawl politeness (currently per-process only).
+
+## Phase 4 — Scoring rubric engine (done)
+
+- **`scoring/signals.ts`** implements every §7 fit/pain line item against real Phase 3 output (`AuditRaw`/`ExtractedContacts`), each producing a `ScoredSignal {code, labelNl, evidence, sourceUrl, points}` — only pushed when there's real evidence; absence of a problem/fit-match contributes silently (0), matching "unevidenced signals score 0" without emitting phantom rows.
+  - `size_match` (spec: "size 2-50 or premises+team page") — no real employee-count data exists from the free sources this pipeline uses, so this is evidenced only via the spec's own OR-clause: a crawled team/over-ons page. `ASSUMPTION`, logged in the code.
+  - `active_business` uses "working phone found" + "content not obviously stale" as the proxy for the spec's own vaguer "active business (recent content, working phone)" — both measured facts, not guesses.
+  - `broken_webshop` deliberately **conservative**: only fires when the crawl's own 5-link broken-link sample happened to include a cart/checkout URL that came back non-200. It will under-detect (a real broken checkout not in that small sample scores 0) rather than infer "broken" from webshop-presence alone, which would be scoring an unmeasured guess.
+  - `outdated_platform` required a real fix mid-build: the check needs raw HTML, which only exists inside the audit module, not in the scoring layer — moved `detectOutdatedMarker()` into `audit/platform.ts` (flash/frameset/ancient-jQuery/FrontPage markers, same "only fires on an unambiguous pattern match" discipline as `detectPlatform`) and added `outdatedMarker`/`outdatedMarkerEvidence` fields to `AuditRaw`, rather than leaving a stray dead-code placeholder in signals.ts that I'd initially written and caught on review before ever running it.
+  - `seo_basics_broken` (spec: "title/meta/h1, 3 each, 9 total") implemented as three separate 3-point signals (`seo_title_missing`/`seo_meta_missing`/`seo_h1_missing`) rather than one all-or-nothing 9-point check — matches the spec's own "3 each" wording.
+  - `no_chat_or_booking` applies uniformly across sectors rather than a real per-sector expectation table (spec says "where the sector expects it"). `ASSUMPTION`: building an accurate per-sector expectation matrix is a real judgment call beyond this phase's scope — logged rather than guessed at.
+- **`scoring/index.ts`**: `scoreLead()` sums signals (fit capped 40, pain capped 60, total capped 100), applies the exact priority thresholds (A≥70, B 55-69, C 45-54) and the "fit < 18 disqualifies regardless of pain" rule verbatim (strict `<`, confirmed `fit === 18` does NOT disqualify — verified directly, see below). `recommendedOffer`/`recommendedChannel` derivation is a documented `ASSUMPTION` (the spec defines the rubric precisely but not an exact offer-recommendation algorithm) — mapped against Candelaria's real service ladder from the global `CLAUDE.md`, never price-led.
+- **Verified live end-to-end**, not just typechecked: ran discovery → crawl → extract → audit → score across three real cases using the same real sites from Phase 2/3 testing:
+  - A healthy site (working HTTPS, forms, booking, analytics, schema.org) scored fit=29/pain=0/total=29, correctly **not qualified** (below the 45 minimum) — a well-built site is genuinely not a good outreach lead, and the engine agrees.
+  - The site with the expired SSL certificate (found in Phase 3) scored fit=18/pain=60/total=78/**priority A**/qualified — exactly the intended outcome for an unreachable/dead site.
+  - A synthetic "no website found" candidate scored identically (fit=18/pain=60/total=78/priority A) via the same `no_website` path.
+- **Architectural boundary, same as Phase 3**: `scoreLead()` is a pure function — no writes to `lead_signals`/`leads.fit_score` etc. Phase 6's orchestration owns turning a `ScoringResult` into DB rows against a real `leadId`.
+- **Verification**: `npx tsc --noEmit` and `npm run build` both clean. Live 3-case test run and removed (no test files left behind — test framework wiring for this area is still a Phase-3+ backlog item, unchanged from the last two phases' notes).
+
+### V2 CANDIDATES noted so far (continued)
+- A real per-sector "chat/booking expected" table instead of applying `no_chat_or_booking` uniformly.
+- A more precise `recommendedOffer` algorithm once real outreach outcomes exist to tune against.

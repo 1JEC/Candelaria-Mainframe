@@ -23,3 +23,19 @@ export function detectPlatform(html: string): { platform: string; evidence: stri
   }
   return null;
 }
+
+const OUTDATED_MARKERS: { pattern: RegExp; label: string }[] = [
+  { pattern: /<embed[^>]+application\/x-shockwave-flash/i, label: "Adobe Flash-embed gevonden" },
+  { pattern: /<frameset/i, label: "Verouderde frameset-layout gevonden" },
+  { pattern: /jquery[.-]1\.[0-4]\./i, label: "Zeer verouderde jQuery-versie (1.0–1.4) gevonden" },
+  { pattern: /name="generator"\s+content="Microsoft FrontPage/i, label: "Gemaakt met Microsoft FrontPage" },
+];
+
+/** Only fires on unambiguous outdated/hobbyist markers — never inferred from "no modern CMS detected" (that would be guessing). */
+export function detectOutdatedMarker(html: string): { label: string; evidence: string } | null {
+  for (const marker of OUTDATED_MARKERS) {
+    const match = html.match(marker.pattern);
+    if (match) return { label: marker.label, evidence: match[0] };
+  }
+  return null;
+}

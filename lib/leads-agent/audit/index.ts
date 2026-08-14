@@ -1,6 +1,6 @@
 import * as cheerio from "cheerio";
 import { fetchPage } from "@/lib/leads-agent/crawler/fetch-page";
-import { detectPlatform } from "./platform";
+import { detectPlatform, detectOutdatedMarker } from "./platform";
 import { runPageSpeedInsights, type PsiResult } from "./pagespeed";
 import type { CrawledPage } from "@/lib/leads-agent/crawler";
 
@@ -23,6 +23,8 @@ export interface AuditRaw {
   mobileViewport: boolean;
   platform: string | null;
   platformEvidence: string | null;
+  outdatedMarker: string | null;
+  outdatedMarkerEvidence: string | null;
   titlePresent: boolean;
   titleLength: number;
   metaDescriptionPresent: boolean;
@@ -129,6 +131,8 @@ export async function runAudit(website: string, crawl: { pages: CrawledPage[] })
       mobileViewport: false,
       platform: null,
       platformEvidence: null,
+      outdatedMarker: null,
+      outdatedMarkerEvidence: null,
       titlePresent: false,
       titleLength: 0,
       metaDescriptionPresent: false,
@@ -153,6 +157,7 @@ export async function runAudit(website: string, crawl: { pages: CrawledPage[] })
 
   const $ = cheerio.load(homepage.html);
   const platformMatch = detectPlatform(homepage.html);
+  const outdatedMatch = detectOutdatedMarker(homepage.html);
   const combinedText = crawl.pages.map((p) => p.html).join("\n");
   // Contact forms are frequently on a dedicated /contact page, not the
   // homepage — check every crawled page, not just the homepage's $.
@@ -180,6 +185,8 @@ export async function runAudit(website: string, crawl: { pages: CrawledPage[] })
     mobileViewport: viewportContent.includes("width=device-width"),
     platform: platformMatch?.platform ?? null,
     platformEvidence: platformMatch?.evidence ?? null,
+    outdatedMarker: outdatedMatch?.label ?? null,
+    outdatedMarkerEvidence: outdatedMatch?.evidence ?? null,
     titlePresent: title.length > 0,
     titleLength: title.length,
     metaDescriptionPresent: metaDescription.length > 0,

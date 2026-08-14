@@ -152,6 +152,15 @@ export async function saveConfig(key: ConfigKey, value: unknown, userId: string)
   return nextVersion;
 }
 
+/** §11: "herstel vorige versie" needs a list to restore from. */
+export async function listConfigVersions(key: ConfigKey) {
+  return db
+    .select({ version: leadAgentConfig.version, isActive: leadAgentConfig.isActive, updatedBy: leadAgentConfig.updatedBy, createdAt: leadAgentConfig.createdAt })
+    .from(leadAgentConfig)
+    .where(eq(leadAgentConfig.key, key))
+    .orderBy(desc(leadAgentConfig.version));
+}
+
 export async function restoreConfigVersion(key: ConfigKey, version: number, userId: string): Promise<number> {
   const [row] = await db
     .select()

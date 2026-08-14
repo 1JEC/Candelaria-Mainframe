@@ -1,4 +1,6 @@
 import { runDoctorChecks } from "@/lib/leads-agent/doctor";
+import { DEFAULT_ICP } from "@/lib/leads-agent/config";
+import { RunConsole } from "@/components/leads-agent/RunConsole";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Leads Agent — Console" };
@@ -15,6 +17,8 @@ export default async function LeadsAgentConsolePage() {
 
   return (
     <div className="space-y-6">
+      <RunConsole sectors={DEFAULT_ICP.sectors} cities={DEFAULT_ICP.cities} />
+
       <div className="bg-white rounded-lg border border-gray-200 p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-brand-black">Systeemstatus</h2>
@@ -36,10 +40,6 @@ export default async function LeadsAgentConsolePage() {
           ))}
         </div>
         <p className="text-xs text-gray-400 mt-4">Laatst gecontroleerd: {new Date(report.checkedAt).toLocaleString("nl-NL")}</p>
-      </div>
-
-      <div className="p-8 bg-gray-50 rounded-lg border border-dashed border-gray-300 text-center">
-        <p className="text-gray-600">De live run-console (start/stop, event-feed) wordt in een volgende fase gebouwd.</p>
       </div>
     </div>
   );

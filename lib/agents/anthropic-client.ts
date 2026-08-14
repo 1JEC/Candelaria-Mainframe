@@ -23,6 +23,11 @@ const PRICING: Record<string, { input: number; output: number }> = {
 const GROUNDING_SUFFIX =
   "\n\nUse only the facts provided. If a fact is missing, omit it. Never invent numbers, names or findings.";
 
+/** Missing key -> the whole AI layer disables itself gracefully, same as any other optional adapter (§5: "pipeline continues without AI"). */
+export function isAnthropicConfigured(): boolean {
+  return Boolean(process.env.ANTHROPIC_API_KEY);
+}
+
 export async function getTodaySpendEur(): Promise<number> {
   const since = new Date();
   since.setHours(0, 0, 0, 0);

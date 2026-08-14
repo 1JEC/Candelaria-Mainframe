@@ -254,6 +254,7 @@ export const replies = pgTable(
     confidence: decimal("confidence", { precision: 4, scale: 3 }),
     handledBy: text("handled_by"),
     handledAt: timestamp("handled_at"),
+    prepBrief: text("prep_brief"), // §9: reply-prep brief generated for `positive` replies
   },
   (table) => ({
     leadIdx: index("replies_lead_idx").on(table.leadId),

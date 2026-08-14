@@ -3,7 +3,7 @@ import { leadAgentConfig } from "@/drizzle/schema";
 import { and, desc, eq } from "drizzle-orm";
 import { logAudit } from "@/lib/audit";
 
-export type ConfigKey = "icp" | "rubric" | "thresholds" | "crawl" | "sources";
+export type ConfigKey = "icp" | "rubric" | "thresholds" | "crawl" | "sources" | "outbound_halt";
 
 export const DEFAULT_ICP = {
   sectors: [
@@ -72,12 +72,19 @@ export const DEFAULT_SOURCES = {
   siteExpansion: { enabled: true },
 };
 
+// §9: DB-backed kill switch, checked by send-gates.ts's gate 1 alongside
+// OUTBOUND_ENABLED/OUTBOUND_MODE. An env var can't be flipped without a
+// redeploy — "reachable from every Outbound screen" needs something an
+// API call can toggle instantly during a real incident.
+export const DEFAULT_OUTBOUND_HALT = { halted: false };
+
 const DEFAULTS: Record<ConfigKey, unknown> = {
   icp: DEFAULT_ICP,
   rubric: DEFAULT_RUBRIC,
   thresholds: DEFAULT_THRESHOLDS,
   crawl: DEFAULT_CRAWL,
   sources: DEFAULT_SOURCES,
+  outbound_halt: DEFAULT_OUTBOUND_HALT,
 };
 
 export async function getConfig<T = unknown>(key: ConfigKey): Promise<T> {

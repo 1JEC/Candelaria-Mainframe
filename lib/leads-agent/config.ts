@@ -3,7 +3,7 @@ import { leadAgentConfig } from "@/drizzle/schema";
 import { and, desc, eq } from "drizzle-orm";
 import { logAudit } from "@/lib/audit";
 
-export type ConfigKey = "icp" | "rubric" | "thresholds" | "crawl" | "sources" | "outbound_halt";
+export type ConfigKey = "icp" | "rubric" | "thresholds" | "crawl" | "sources" | "outbound_halt" | "golive_checklist";
 
 export const DEFAULT_ICP = {
   sectors: [
@@ -78,6 +78,25 @@ export const DEFAULT_SOURCES = {
 // API call can toggle instantly during a real incident.
 export const DEFAULT_OUTBOUND_HALT = { halted: false };
 
+// §11 go-live checklist — every box before OUTBOUND_ENABLED=true. Most
+// items can't be verified programmatically (they're real-world steps:
+// registering mailboxes, running mail-tester, agreeing a reply routine),
+// so this is Johan's own tickable record, persisted like any other config.
+export const GOLIVE_CHECKLIST_ITEMS = [
+  { key: "domain_registered", label: "Outreach-domein geregistreerd, ≥2 weken oud, 301 naar hoofdsite" },
+  { key: "privacy_live", label: "Privacyverklaring live en gelinkt" },
+  { key: "mailboxes_ready", label: "2-3 mailboxen met echte naam en handtekening" },
+  { key: "dns_verified", label: "MX/SPF/DKIM/DMARC geverifieerd, mail-tester 10/10" },
+  { key: "postmaster_configured", label: "Google Postmaster Tools geconfigureerd" },
+  { key: "sequencer_warmup", label: "Sequencer verbonden, warmup ≥14 dagen actief" },
+  { key: "tracking_disabled", label: "Open tracking en link-wrapping uitgeschakeld" },
+  { key: "reply_routine_agreed", label: "Reactieroutine afgesproken" },
+  { key: "suppression_imported", label: "Onderdrukkingslijst geïmporteerd (klanten, partners, concurrenten, eerder benaderden)" },
+  { key: "test_sequence_landed", label: "Testreeks kwam aan in hoofdinbox bij Gmail, Outlook en een zakelijk domein" },
+  { key: "send_caps_set", label: "Eerste batch max. 5/dag, plafond 25/mailbox/dag voor altijd" },
+] as const;
+export const DEFAULT_GOLIVE_CHECKLIST = { items: Object.fromEntries(GOLIVE_CHECKLIST_ITEMS.map((i) => [i.key, false])) as Record<string, boolean> };
+
 const DEFAULTS: Record<ConfigKey, unknown> = {
   icp: DEFAULT_ICP,
   rubric: DEFAULT_RUBRIC,
@@ -85,6 +104,7 @@ const DEFAULTS: Record<ConfigKey, unknown> = {
   crawl: DEFAULT_CRAWL,
   sources: DEFAULT_SOURCES,
   outbound_halt: DEFAULT_OUTBOUND_HALT,
+  golive_checklist: DEFAULT_GOLIVE_CHECKLIST,
 };
 
 export async function getConfig<T = unknown>(key: ConfigKey): Promise<T> {

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/components/ui/Toast";
 import { updateLead } from "@/app/(dashboard)/leads/actions";
 
-const STATUS_OPTIONS = ["new", "contacted", "qualified", "won", "lost"];
+const STATUS_OPTIONS = ["new", "qualified", "packed", "contacted", "replied", "won", "lost", "suppressed"];
 
 export default function LeadEditForm({
   lead,

@@ -7,6 +7,7 @@ import { runAudit, type AuditRaw } from "@/lib/leads-agent/audit";
 import { scoreLead } from "@/lib/leads-agent/scoring";
 import type { ScoringInput } from "@/lib/leads-agent/scoring/types";
 import { generatePainBrief, generateOutreachDrafts } from "@/lib/leads-agent/ai";
+import { assembleOutreachPack, validatePackContent } from "@/lib/leads-agent/outreach/assemble";
 import { MODEL_SMART } from "@/lib/agents/anthropic-client";
 import { logAudit } from "@/lib/audit";
 import type { DiscoveredCandidate } from "@/lib/leads-agent/discovery/types";
@@ -124,7 +125,7 @@ export async function processCandidateTask(runId: string, taskId: string, target
   });
 
   if (result.qualified) {
-    await generatePackForLead(runId, taskId, leadId, candidate.companyName, result.signals);
+    await generatePackForLead(runId, taskId, leadId, candidate.companyName, candidate.sourceUrl, contacts, result.signals);
   }
 
   return { leadId, qualified: result.qualified, totalScore: result.totalScore };
@@ -158,7 +159,15 @@ async function upsertLead(candidate: DiscoveredCandidate, now: Date): Promise<st
   return leadId;
 }
 
-async function generatePackForLead(runId: string, taskId: string, leadId: string, companyName: string, signals: Awaited<ReturnType<typeof scoreLead>>["signals"]) {
+async function generatePackForLead(
+  runId: string,
+  taskId: string,
+  leadId: string,
+  companyName: string,
+  sourceUrl: string,
+  contacts: ExtractedContacts,
+  signals: Awaited<ReturnType<typeof scoreLead>>["signals"]
+) {
   const painBriefResult = await generatePainBrief(companyName, signals, runId);
   if (!painBriefResult.ok) {
     await emitEvent({
@@ -183,15 +192,46 @@ async function generatePackForLead(runId: string, taskId: string, leadId: string
     return;
   }
 
+  const socialProfileUrl = contacts.socials[0]?.value;
+  const assembled = assembleOutreachPack({ companyName, sourceUrl, socialProfileUrl, drafts: draftsResult.data, signals });
+
+  try {
+    validatePackContent(assembled, sourceUrl);
+  } catch (err) {
+    await emitEvent({
+      runId,
+      taskId,
+      leadId,
+      code: "error",
+      level: "error",
+      messageNl: `Pack-validatie mislukt, niet opgeslagen: ${err instanceof Error ? err.message : String(err)}`,
+    });
+    return;
+  }
+
+  if (assembled.missingConfig.length > 0) {
+    await emitEvent({
+      runId,
+      taskId,
+      leadId,
+      code: "warn",
+      messageNl: `Pack gegenereerd met placeholders voor ontbrekende configuratie: ${assembled.missingConfig.join(", ")}.`,
+    });
+  }
+  for (const warning of assembled.wordCountWarnings) {
+    await emitEvent({ runId, taskId, leadId, code: "warn", messageNl: `Woordlimiet overschreden — ${warning}` });
+  }
+
   await db.insert(leadPacks).values({
     id: crypto.randomUUID(),
     leadId,
     runId,
-    email1: draftsResult.data.email1Body,
-    email2: draftsResult.data.email2Body,
-    email3: draftsResult.data.email3Body,
-    dmDraft: draftsResult.data.dmBody,
-    callScript: JSON.stringify(draftsResult.data.callScript),
+    email1: assembled.email1,
+    email2: assembled.email2,
+    email3: assembled.email3,
+    dmDraft: assembled.dmDraft,
+    callScript: assembled.callScript,
+    evidenceMd: assembled.evidenceMd,
     model: MODEL_SMART,
     grounded: true,
   });

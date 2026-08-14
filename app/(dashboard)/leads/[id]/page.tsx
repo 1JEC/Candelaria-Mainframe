@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { leads, leadEvents, leadSignals, leadContacts } from "@/drizzle/schema";
+import { leads, leadEvents, leadSignals, leadContacts, leadPacks } from "@/drizzle/schema";
 import { eq, desc } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -14,6 +14,7 @@ export const metadata: Metadata = {
 const TABS = [
   { key: "overzicht", label: "Overzicht" },
   { key: "bewijs", label: "Bewijs" },
+  { key: "outreach", label: "Outreach" },
   { key: "historie", label: "Historie" },
 ];
 
@@ -31,11 +32,14 @@ export default async function LeadDetailPage({
   const lead = await db.query.leads.findFirst({ where: eq(leads.id, id) });
   if (!lead) notFound();
 
-  const [events, signals, contacts] = await Promise.all([
+  const [events, signals, contacts, packs] = await Promise.all([
     db.select().from(leadEvents).where(eq(leadEvents.leadId, id)).orderBy(desc(leadEvents.createdAt)),
     db.select().from(leadSignals).where(eq(leadSignals.leadId, id)).orderBy(desc(leadSignals.points)),
     db.select().from(leadContacts).where(eq(leadContacts.leadId, id)),
+    db.select().from(leadPacks).where(eq(leadPacks.leadId, id)).orderBy(desc(leadPacks.generatedAt)),
   ]);
+  const pack = packs[0] ?? null;
+  const callScript = pack?.callScript ? safeParseCallScript(pack.callScript) : null;
 
   return (
     <div className="max-w-3xl">
@@ -125,6 +129,74 @@ export default async function LeadDetailPage({
         </div>
       )}
 
+      {tab === "outreach" && (
+        <div className="space-y-4">
+          {pack ? (
+            <>
+              <div className="bg-white p-4 rounded-lg border border-gray-200">
+                <h3 className="text-sm font-semibold text-brand-black mb-2">E-mail 1 (direct)</h3>
+                <pre className="text-sm text-gray-700 whitespace-pre-wrap font-sans">{pack.email1}</pre>
+              </div>
+              <div className="bg-white p-4 rounded-lg border border-gray-200">
+                <h3 className="text-sm font-semibold text-brand-black mb-2">E-mail 2 (+4 dagen)</h3>
+                <pre className="text-sm text-gray-700 whitespace-pre-wrap font-sans">{pack.email2}</pre>
+              </div>
+              <div className="bg-white p-4 rounded-lg border border-gray-200">
+                <h3 className="text-sm font-semibold text-brand-black mb-2">E-mail 3 (+9 dagen)</h3>
+                <pre className="text-sm text-gray-700 whitespace-pre-wrap font-sans">{pack.email3}</pre>
+              </div>
+              <div className="bg-white p-4 rounded-lg border border-gray-200">
+                <h3 className="text-sm font-semibold text-brand-black mb-2">DM-concept (handmatig versturen)</h3>
+                <pre className="text-sm text-gray-700 whitespace-pre-wrap font-sans">{pack.dmDraft}</pre>
+              </div>
+              {callScript && (
+                <div className="bg-white p-4 rounded-lg border border-gray-200 space-y-3">
+                  <h3 className="text-sm font-semibold text-brand-black">Belscript</h3>
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 mb-1">Opener</p>
+                    <p className="text-sm text-gray-700">{callScript.opener}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 mb-1">Kwalificerende vragen</p>
+                    <ul className="text-sm text-gray-700 list-disc list-inside space-y-1">
+                      {callScript.qualifyingQuestions.map((q, i) => (
+                        <li key={i}>{q}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 mb-1">Reacties op bezwaren</p>
+                    <ul className="text-sm text-gray-700 list-disc list-inside space-y-1">
+                      {callScript.objectionResponses.map((r, i) => (
+                        <li key={i}>{r}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 mb-1">Afsluiting</p>
+                    <p className="text-sm text-gray-700">{callScript.close}</p>
+                  </div>
+                </div>
+              )}
+              {pack.evidenceMd && (
+                <div className="bg-white p-4 rounded-lg border border-gray-200">
+                  <h3 className="text-sm font-semibold text-brand-black mb-2">Bewijsblad</h3>
+                  <pre className="text-xs text-gray-600 whitespace-pre-wrap font-mono">{pack.evidenceMd}</pre>
+                </div>
+              )}
+              <p className="text-xs text-gray-400">
+                Gegenereerd {pack.generatedAt ? new Date(pack.generatedAt).toLocaleString("nl-NL") : "—"} met {pack.model}
+                {pack.grounded === false && " — niet gegrond, controleer voor verzending"}.
+              </p>
+            </>
+          ) : (
+            <p className="text-sm text-gray-500">
+              Nog geen outreach-pack. Packs worden automatisch gegenereerd voor gekwalificeerde leads zodra een AI-sleutel beschikbaar is.
+            </p>
+          )}
+        </div>
+      )}
+
       {tab === "historie" && (
         <div>
           {events.length > 0 ? (
@@ -146,4 +218,23 @@ export default async function LeadDetailPage({
       )}
     </div>
   );
+}
+
+interface CallScript {
+  opener: string;
+  qualifyingQuestions: string[];
+  objectionResponses: string[];
+  close: string;
+}
+
+function safeParseCallScript(raw: string): CallScript | null {
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed.opener === "string" && Array.isArray(parsed.qualifyingQuestions)) {
+      return parsed as CallScript;
+    }
+    return null;
+  } catch {
+    return null;
+  }
 }

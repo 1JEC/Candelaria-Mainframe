@@ -4,8 +4,15 @@ import { runDoctorChecks } from '@/lib/leads-agent/doctor'
 import { DEFAULT_ICP } from '@/lib/leads-agent/config'
 import { getActiveRun, getRecentRuns } from '@/lib/queries/prospecting'
 import { ConsoleRunForm } from '@/components/prospecting/ConsoleRunForm'
-import { formatDateTime } from '@/lib/format'
+import { formatDateTime, formatDuration } from '@/lib/format'
 import { nl } from '@/lib/nl'
+
+/** Elapsed time for a run: finished runs get a fixed duration, an active run's duration keeps growing until the next page load — that's a fair reading of "how long has it worked" for a server-rendered list. */
+function runDurationSeconds(startedAt: Date | null, finishedAt: Date | null): number | null {
+  if (!startedAt) return null
+  const end = finishedAt ?? new Date()
+  return (end.getTime() - startedAt.getTime()) / 1000
+}
 
 export const metadata: Metadata = { title: 'Prospectie — Console' }
 export const dynamic = 'force-dynamic'
@@ -26,6 +33,7 @@ export default async function ProspectingConsolePage() {
         cities={DEFAULT_ICP.cities}
         initialRunId={activeRun?.id ?? null}
         initialStatus={activeRun?.status ?? null}
+        initialStartedAt={activeRun?.startedAt ?? null}
       />
 
       <div className="card">
@@ -57,14 +65,18 @@ export default async function ProspectingConsolePage() {
         <div className="card">
           <h2 className="display text-h2 text-foreground">{nl.prospecting.console.recentRuns}</h2>
           <div className="mt-4 space-y-2">
-            {recentRuns.map((run) => (
-              <div key={run.id} className="flex items-center justify-between border-b border-border py-2 last:border-0">
-                <span className="text-body-sm text-foreground">{run.label}</span>
-                <span className="text-caption text-muted">
-                  {run.status} — {formatDateTime(run.startedAt)}
-                </span>
-              </div>
-            ))}
+            {recentRuns.map((run) => {
+              const duration = formatDuration(runDurationSeconds(run.startedAt, run.finishedAt))
+              return (
+                <div key={run.id} className="flex items-center justify-between border-b border-border py-2 last:border-0">
+                  <span className="text-body-sm text-foreground">{run.label}</span>
+                  <span className="text-caption text-muted">
+                    {run.status} — {formatDateTime(run.startedAt)}
+                    {duration && ` — ${duration}${run.status === 'running' ? ' (bezig)' : ''}`}
+                  </span>
+                </div>
+              )
+            })}
           </div>
         </div>
       )}

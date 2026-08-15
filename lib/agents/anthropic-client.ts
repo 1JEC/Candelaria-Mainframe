@@ -1,29 +1,26 @@
-import Anthropic from '@anthropic-ai/sdk'
 import { gte } from 'drizzle-orm'
 
 import { db } from '@/db'
 import { prospectAiCalls } from '@/db/schema'
+import { chat, estimateCost, isAiConfigured } from './providers'
 
-const client = new Anthropic()
+export { isAiConfigured, activeProvider, describeProvider } from './providers'
 
+// Defaults are Anthropic model IDs; on a free backend both are overridden by
+// MODEL_CHEAP/MODEL_SMART (e.g. "llama-3.3-70b-versatile" on Groq).
 export const MODEL_CHEAP = process.env.MODEL_CHEAP || 'claude-haiku-4-5'
 export const MODEL_SMART = process.env.MODEL_SMART || 'claude-sonnet-5'
-
-// USD list price per million tokens. Compared directly against
-// AI_DAILY_BUDGET_EUR without currency conversion — deliberately
-// conservative (USD >= EUR most of the time), a soft budget guard rather
-// than a billing-accurate figure.
-const PRICING: Record<string, { input: number; output: number }> = {
-  'claude-sonnet-5': { input: 3.0, output: 15.0 },
-  'claude-haiku-4-5': { input: 1.0, output: 5.0 },
-}
 
 const GROUNDING_SUFFIX =
   '\n\nUse only the facts provided. If a fact is missing, omit it. Never invent numbers, names or findings.'
 
-/** Missing key -> the whole AI layer disables itself gracefully (pipeline continues without AI). */
+/**
+ * Missing key -> the whole AI layer disables itself gracefully (pipeline
+ * continues without AI).
+ * @deprecated Use isAiConfigured — kept so existing call sites keep compiling.
+ */
 export function isAnthropicConfigured(): boolean {
-  return Boolean(process.env.ANTHROPIC_API_KEY)
+  return isAiConfigured()
 }
 
 export async function getTodaySpendEur(): Promise<number> {
@@ -69,32 +66,24 @@ export async function callModel<T = unknown>(opts: {
   const startedAt = new Date()
 
   try {
-    const message = await client.messages.create({
+    const response = await chat({
       model: opts.model,
-      max_tokens: opts.maxTokens ?? 1024,
+      maxTokens: opts.maxTokens ?? 1024,
       system: opts.system,
-      messages: [{ role: 'user', content: opts.prompt + GROUNDING_SUFFIX }],
+      prompt: opts.prompt + GROUNDING_SUFFIX,
     })
 
-    const text = message.content
-      .filter((b): b is Anthropic.TextBlock => b.type === 'text')
-      .map((b) => b.text)
-      .join('\n')
+    const text = response.text
     const json = extractJson<T>(text)
-
-    const pricing = PRICING[opts.model]
-    const cost = pricing
-      ? (message.usage.input_tokens / 1_000_000) * pricing.input +
-        (message.usage.output_tokens / 1_000_000) * pricing.output
-      : 0
+    const cost = estimateCost(opts.model, response.inputTokens, response.outputTokens)
 
     await db.insert(prospectAiCalls).values({
       runId: opts.runId ?? null,
       purpose: opts.purpose,
       model: opts.model,
       success: true,
-      inputTokens: message.usage.input_tokens,
-      outputTokens: message.usage.output_tokens,
+      inputTokens: response.inputTokens,
+      outputTokens: response.outputTokens,
       costEur: cost.toFixed(4),
       outputSummary: text.slice(0, 500),
       startedAt,

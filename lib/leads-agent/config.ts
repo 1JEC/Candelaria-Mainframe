@@ -8,7 +8,7 @@ export interface ProspectActor {
   orgId: string;
 }
 
-export type ConfigKey = "icp" | "rubric" | "thresholds" | "crawl" | "sources" | "outbound_halt" | "golive_checklist";
+export type ConfigKey = "icp" | "rubric" | "risk" | "thresholds" | "crawl" | "sources" | "outbound_halt" | "golive_checklist";
 
 export const DEFAULT_ICP = {
   sectors: [
@@ -51,6 +51,42 @@ export const DEFAULT_RUBRIC = {
   priorityB: 55,
   priorityC: 45,
   minFitToQualify: 18,
+};
+
+// Risk weights — deliberately NOT the same numbers as the pain rubric.
+// Pain answers "is there work here?"; risk answers "what is at stake if
+// nothing happens?". A missing schema.org markup is pain but no risk; a
+// spoofable mail domain is barely pain but real risk. Weights are additive
+// per axis and capped at 100 by assessRisk().
+export const DEFAULT_RISK = {
+  business: {
+    siteUnreachable: 40,
+    noHttps: 30,
+    webshopWithoutHttps: 20, // stacks on noHttps — payment data over plaintext
+    outdatedPlatform: 25,
+    httpError: 25,
+    noDmarc: 18,
+    weakSpf: 14,
+    analyticsWithoutPrivacyPage: 16,
+    noMx: 12,
+    brokenLinks: 10,
+    staleContent: 8,
+    noMobileViewport: 8,
+  },
+  engagement: {
+    sectorDisqualified: 40,
+    noReachableChannel: 30,
+    possiblyInactive: 25,
+    lowPainModernSite: 18,
+    enterpriseScope: 15,
+    closedPlatform: 12,
+    unverifiedIdentity: 8,
+  },
+  // Level boundaries per axis: >= high -> "hoog", >= elevated -> "verhoogd".
+  businessHigh: 40,
+  businessElevated: 18,
+  engagementHigh: 40,
+  engagementElevated: 20,
 };
 
 export const DEFAULT_THRESHOLDS = {
@@ -105,6 +141,7 @@ export const DEFAULT_GOLIVE_CHECKLIST = { items: Object.fromEntries(GOLIVE_CHECK
 const DEFAULTS: Record<ConfigKey, unknown> = {
   icp: DEFAULT_ICP,
   rubric: DEFAULT_RUBRIC,
+  risk: DEFAULT_RISK,
   thresholds: DEFAULT_THRESHOLDS,
   crawl: DEFAULT_CRAWL,
   sources: DEFAULT_SOURCES,

@@ -455,3 +455,79 @@ components). **Not yet verified live against a real database** — see below.
 - **ICP editing** still has no UI (matches the original build's own
   documented gap) — `saveConfigAction('icp', ...)` exists and works, but
   nothing in `/prospecting/instellingen` calls it yet for the ICP section.
+
+## Post-deploy: demo data purge + three stub modules built out
+
+After this branch merged and was manually deployed (this project has no
+GitHub→Vercel auto-deploy configured — every deploy here so far has been
+`vercel --prod` by hand), a live audit of the production database found
+the entire app was still running on seeded demo content: one organization
+("Demo-organisatie", `is_demo: true`), 2 synthetic users alongside the real
+admin account, and fabricated agents/conversations/messages/escalations/
+requests/changelog entries (281 conversations, 1405 messages, 43
+escalations, 3 agents, 3 requests — all `is_demo: true`). Purged all of it
+via cascade deletes (deleting the 3 demo agents alone cascaded through
+conversations→messages/escalations automatically; same for requests→
+comments) and converted the organization to real: renamed to "Candelaria
+Agency", `slug: candelaria-agency`, `is_demo: false`. Only the real admin
+user (`j.candelaria171@gmail.com`) remains.
+
+A live doctor-check pass on production caught one real bug in the ported
+Prospecting code: `lib/leads-agent/doctor.ts`'s `stale_runs` check
+interpolated a raw JS `Date` into a drizzle `sql\`...\`` template, which
+this `postgres` driver cannot serialize in that position
+(`ERR_INVALID_ARG_TYPE`). Fixed by switching to the typed query builder
+(`and(eq(...), lt(...))`) instead of raw SQL — the same category of fix
+already applied elsewhere in the port (`task-queue.ts`).
+
+Three of the six remaining stub modules (`leads`, `social`, `ads`, `seo`,
+`automations`, `library`) were built out — the three that need no external
+API credentials. `social` and `ads` need real Meta/Google Ads API access
+Johan hasn't provided yet; `automations` has no product spec beyond its
+one-line nav description. Not attempted.
+
+- **`leads` (client CRM)**: the nl.ts copy already promised "Alle
+  aanvragen en gesprekken op één plek" (all requests and conversations in
+  one place). Rather than invent a new, undefined "leads capture" data
+  model, built it as a straight aggregation of the two things that phrase
+  actually names — `listRequests()` and `listConversations()`, both
+  already existing, already-tested query functions. Zero new schema, zero
+  new query code beyond the page itself.
+- **`seo`**: reuses Prospecting's own audit engine verbatim
+  (`crawlDomain()` + `runAudit()` from `lib/leads-agent/{crawler,audit}`)
+  against the org's *own* website instead of a discovered prospect's.
+  Added `organizations.website_url` (nullable — sortable/settable once)
+  and a `seo_audits` table (one row per audit run, `raw_json` = the same
+  `AuditRaw` shape Prospecting already produces). No new external
+  dependency — `PAGESPEED_API_KEY` was already optional/gracefully-
+  degrading in the reused code.
+- **`library`**: needed real file storage, which didn't exist in this
+  project yet. Provisioned a private Vercel Blob store
+  (`vercel blob create-store candelaria-library --access private`) and
+  linked it to the project — `BLOB_READ_WRITE_TOKEN` now exists. Because
+  the store is `private` (client documents, not public link-shareable
+  files), direct blob URLs don't work for downloads; added
+  `/api/library/[fileId]/download` as an authenticated proxy
+  (`get(pathname, {access:'private'})`, streamed back) gated the same way
+  as every other `/api` route in this repo, rather than exposing the blob
+  URL directly.
+- **Migration note**: `db:generate` also picked up the `prospect_send_
+  result` enum widening (`bounce`/`spam_complaint`) as a pending `ALTER
+  TYPE ... ADD VALUE`, because that schema edit was made mid-port (fixing
+  a typecheck error) *after* migration 0004 had already been generated and
+  applied — drizzle-kit correctly caught the drift on the next `generate`
+  run rather than silently missing it.
+- **Deploy mechanics**: this project's Vercel↔GitHub connection doesn't
+  auto-deploy on merge (confirmed: merging PR #1 produced no new
+  deployment even after waiting). Every production deploy so far,
+  including this one, has been `vercel --prod` run by hand from a
+  worktree checked out at the merged commit. Fixing the Git integration
+  itself (Vercel dashboard → Project Settings → Git) is a one-time manual
+  step outside what a deploy script can do — flagged for Johan, not fixed
+  here.
+- One deploy attempt failed outright: the Prospecting sweeper's cron
+  (`*/5 * * * *`) exceeds the Hobby plan's one-run-per-day cron limit.
+  Fixed to `0 6 * * *` (once daily) — pushed as a direct hotfix commit to
+  `main`, not a PR, since it was blocking every deploy. This weakens the
+  sweeper as a mid-run-recovery fallback (the primary mechanism, the
+  Console's own browser-tab polling, is unaffected).

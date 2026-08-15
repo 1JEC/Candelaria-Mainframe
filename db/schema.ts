@@ -55,6 +55,9 @@ export const organizations = pgTable(
     name: text('name').notNull(),
     slug: text('slug').notNull(),
     plan: orgPlan('plan').notNull().default('starter'),
+    // The org's own website — audited by the SEO module. Nullable: set once
+    // in Settings before the SEO module has anything to check.
+    websiteUrl: text('website_url'),
     isDemo: boolean('is_demo').notNull().default(false),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
@@ -302,6 +305,53 @@ export const escalations = pgTable(
     uniqueIndex('escalations_conversation_idx').on(t.conversationId),
     index('escalations_org_status_idx').on(t.orgId, t.status),
   ],
+)
+
+/* ------------------------------------------------------------------ */
+/* SEO — technical audit of the org's own website                      */
+/* ------------------------------------------------------------------ */
+
+/* ------------------------------------------------------------------ */
+/* Library — documents, brand material and reports (Vercel Blob)       */
+/* ------------------------------------------------------------------ */
+
+export const libraryFiles = pgTable(
+  'library_files',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    orgId: uuid('org_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    // Vercel Blob's public URL and its own pathname (needed to call del()).
+    blobUrl: text('blob_url').notNull(),
+    pathname: text('pathname').notNull(),
+    contentType: text('content_type'),
+    size: integer('size').notNull(),
+    uploadedBy: uuid('uploaded_by').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [index('library_files_org_created_idx').on(t.orgId, t.createdAt)],
+)
+
+export const seoAudits = pgTable(
+  'seo_audits',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    orgId: uuid('org_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    url: text('url').notNull(),
+    rawJson: jsonb('raw_json').notNull().$type<Record<string, unknown>>(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [index('seo_audits_org_created_idx').on(t.orgId, t.createdAt)],
 )
 
 /* ------------------------------------------------------------------ */
@@ -992,6 +1042,8 @@ export const prospectSuppression = pgTable(
 )
 
 export type Organization = typeof organizations.$inferSelect
+export type SeoAudit = typeof seoAudits.$inferSelect
+export type LibraryFile = typeof libraryFiles.$inferSelect
 export type User = typeof users.$inferSelect
 export type AuditLogEntry = typeof auditLog.$inferSelect
 export type Integration = typeof integrations.$inferSelect

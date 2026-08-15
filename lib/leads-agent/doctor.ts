@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import { prospectSuppression, prospectRuns } from "@/db/schema";
-import { sql } from "drizzle-orm";
+import { and, eq, lt, sql } from "drizzle-orm";
 import { checkAiBudget } from "@/lib/agents/anthropic-client";
 
 export type CheckStatus = "green" | "amber" | "red";
@@ -90,7 +90,7 @@ export async function runDoctorChecks(): Promise<DoctorReport> {
     const stale = await db
       .select({ count: sql<number>`count(*)::int` })
       .from(prospectRuns)
-      .where(sql`${prospectRuns.status} = 'running' and ${prospectRuns.heartbeatAt} < ${staleSince}`);
+      .where(and(eq(prospectRuns.status, "running"), lt(prospectRuns.heartbeatAt, staleSince)));
     const count = stale[0]?.count ?? 0;
     checks.push({
       name: "stale_runs",

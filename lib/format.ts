@@ -41,6 +41,19 @@ export const formatBucket = (iso: string, bucket: 'day' | 'week' | 'month') =>
     year: bucket === 'month' ? 'numeric' : undefined,
   }).format(new Date(`${iso}T00:00:00`))
 
+/** "4,2 MB" — binary units (KB=1024 bytes), matching how file sizes are usually shown. */
+export function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  const units = ['KB', 'MB', 'GB']
+  let value = bytes / 1024
+  let unitIndex = 0
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024
+    unitIndex++
+  }
+  return `${new Intl.NumberFormat(LOCALE, { maximumFractionDigits: 1 }).format(value)} ${units[unitIndex]}`
+}
+
 /** "4 min 20 s" — returns null so callers render an em dash, not a fake zero. */
 export function formatDuration(seconds: number | null): string | null {
   if (seconds === null || Number.isNaN(seconds)) return null

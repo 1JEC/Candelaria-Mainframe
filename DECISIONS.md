@@ -531,3 +531,93 @@ one-line nav description. Not attempted.
   `main`, not a PR, since it was blocking every deploy. This weakens the
   sweeper as a mid-run-recovery fallback (the primary mechanism, the
   Console's own browser-tab polling, is unaffected).
+
+# Prospect risk assessment, free AI backend, self-service settings (PRs #3–#5)
+
+Ported the risk-assessment module and the swappable model-transport layer
+from an independent build of this same leads-agent (the `mainframe-hq`
+lineage — see "Module placement" above for why that's a separate codebase
+with the same origin). Both slotted in unchanged: `lib/leads-agent/risk/`
+imports only from modules that already existed here (`config`, `audit`,
+`extraction/contacts`, `health/dns-check`), and the provider layer
+(`lib/agents/providers.ts`) sits behind the existing `callModel()`
+contract, so none of the six existing AI call sites changed. Default
+backend is Anthropic (paid); `AI_PROVIDER=openai` + `AI_BASE_URL` (presets:
+`ollama`/`groq`/`openrouter`/`gemini`/`mistral`) routes through any
+OpenAI-compatible endpoint instead, at zero marginal cost.
+
+Fixed the same non-idempotency bug in both codebases while there:
+`processCandidateTask` re-inserted `prospect_contacts`/`prospect_signals`
+on every retry instead of replacing them — duplicating evidence rows after
+a mid-run failure. Now deletes the lead's prior rows before writing fresh
+ones. This matters more on a free backend than a paid one: rate limits are
+tighter, so a retried task is the normal case, not an edge case.
+
+## Mainframe Doorlichting — audit against the actual live app
+
+Requested: a full gap-analysis of what this portal has and lacks,
+specifically for an AI-infrastructure business (not the generic
+web-agency backoffice the earlier `mainframe-hq`-lineage blueprint
+assumed). Delivered as a published artifact after a full read-only
+inventory of every nav module. Headline finding: `/agents` is a
+*reporting* layer over agents that already run elsewhere (fed by
+`POST /api/ingest/conversations`) — not a place to configure or deploy
+one. Six gaps identified; the artifact and this repo's own code are the
+source of truth, not repeated in full here. Four were closed in PR #4:
+
+- **AI cost visibility** — `prospect_ai_calls`/`agent_runs`-style cost
+  tracking already existed and was never surfaced anywhere. Added a cost
+  estimate per agent (reusing `estimateCost()`/`hasKnownPricing()` from
+  the provider layer — an unpriced model shows "unknown", never a
+  fabricated €0,00), a daily AI-budget card and per-run cost on
+  Prospecting, and SEO audit history (the `listSeoAuditHistory()` query
+  already existed, unused).
+- **Integrations screen** — `integrations` table + AES-256-GCM credential
+  design already existed with zero code reading or writing it. Built
+  `lib/integration-crypto.ts` and a connect/disconnect UI. Scoped
+  honestly: manual API-key/token paste per provider, not an OAuth
+  authorization-code flow — no provider app (Meta/Google/LinkedIn client
+  ID + redirect URI) is registered for this deployment, so a fake
+  "Connect with Google" button would not have worked.
+- **User management** — invite/role-change/deactivate. Reuses the
+  existing password-reset token + email mechanism as the invite
+  mechanism (a new user gets an unusable random password hash and the
+  same `/reset-password?token=` link). Added `users.is_active`
+  (migration 0009) and wired it into `auth.ts`'s `authorize()` — checked
+  *after* `bcrypt.compare`, not before, so a deactivated account isn't
+  measurably faster to reject than a wrong-password one.
+- **Org settings** — rename only. Plan is shown read-only: `org_plan` has
+  no billing system behind it yet, so an editable plan selector would
+  change a label with no effect on limits or invoicing.
+
+Not attempted: governance/guardrails/prompt-versioning and SLA/incident
+monitoring for deployed agents (the other two findings). Both need actual
+product decisions — which guardrail policies, which SLA thresholds — that
+aren't inferable from existing code, the same reasoning that's kept
+`automations` unbuilt since Phase 6.
+
+## Recurring mistake: migrations not reaching production (fix in PR #5)
+
+Twice in one session, a schema-changing PR was merged and the migration
+did not reach production despite being run — most likely `drizzle-kit
+migrate` executed against `.env.local`'s local Postgres out of the normal
+dev-workflow habit, not the Vercel production database. The failure is
+silent: no error, just a live app one migration behind until a real
+request hits the missing column. Confirmed both times by pulling the
+actual production env (`vercel env pull --environment production`) and
+querying `information_schema.columns` directly — the missing column
+genuinely wasn't there.
+
+**Fix: `npm run db:migrate:prod`** (`scripts/migrate-production.ts`).
+Pulls the production `DATABASE_URL` fresh from Vercel every run, refuses
+to proceed if the resolved host looks local (the exact check that would
+have caught this immediately), forces that URL into the actual migrate
+call's environment (dotenv never overrides an already-set var — that's
+what makes this work), verifies afterward against Drizzle's own
+`__drizzle_migrations` journal, and always deletes the pulled credentials
+file. Live-run against real production as its own verification: correctly
+resolved the Neon host, no-op since already current, journal confirmed 10
+migrations.
+
+**Going forward: always use `db:migrate:prod` after merging a
+schema-changing PR, never bare `db:migrate` outside local development.**

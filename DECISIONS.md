@@ -275,3 +275,183 @@ production secrets).
   revisiting if lead volume grows substantially.
 - Location breakdown is a table with an intensity bar, not an actual
   geographic map — see Phase 0 note.
+
+---
+
+# Prospecting — Leads Agent (ported from an independent 11-phase build)
+
+Autonomous port log. A full Leads Agent (Dutch MKB prospecting: discovery,
+website audit, fit/pain scoring, AI outreach drafting, outbound
+dry-run-to-live scaffolding) was previously built end-to-end — 11 phases,
+fully verified — on a separate branch against an *older* snapshot of this
+app (NextAuth v4, `drizzle/schema.ts`, `@vercel/postgres`). By the time that
+work was ready to merge, this repo's `main` had moved on to a different,
+incompatible architecture (NextAuth v5, `db/schema.ts`, RBAC modules,
+org-scoped multi-tenancy) whose own migrations 0000–0003 had — per this very
+file's Phase 1 "Manual steps remaining" note above — never actually been
+applied to a real production database either. Rather than merge two
+incompatible schemas, the entire feature was re-ported onto the current
+architecture from scratch, reusing all proven business logic verbatim and
+rebuilding only the integration layer (schema, auth, routes, pages).
+
+## Module placement — a real product conflict, not just a naming collision
+
+`MODULES` already has a `'leads'` entry (see Phase 0 above): a future,
+per-org client CRM, not built out yet beyond its `EmptyState` stub. This
+feature is the opposite — Candelaria's own internal tool for finding *new*
+clients, structurally identical in kind to `website-leads`/`analytics`
+(Candelaria's own data, never a client's). Added as its own module,
+**`prospecting`**, in `STAFF_ONLY_MODULES` — never visible to `client_manager`
+or `client_viewer`, and never touching the client-facing `leads` table.
+
+## Schema
+
+All new tables live in `db/schema.ts` (this repo's single-file convention,
+not a separate module file) under a `prospect_` prefix — `prospect_leads`,
+`prospect_runs`, `prospect_run_tasks`, `prospect_events`, `prospect_signals`,
+`prospect_contacts`, `prospect_audits`, `prospect_packs`,
+`prospect_page_cache`, `prospect_config`, `prospect_sequences`,
+`prospect_mailboxes`, `prospect_enrollments`, `prospect_replies`,
+`prospect_outbox`, `prospect_send_log`, `prospect_suppression`, plus one new
+addition not in the original build, `prospect_ai_calls` (see below). None
+are `org_id`-scoped, matching `leads`/`pageviews`'s precedent. Migration
+`db/migrations/0004_freezing_sleepwalker.sql` is purely additive — new enum
+types and tables only, no `ALTER`/`DROP` on anything pre-existing — generated
+via `npm run db:generate`, **not yet applied to any database** (see "Not
+done" below).
+
+- **`AuthGuard`**: no `requireAdmin(){ok,status,session}` helper exists on
+  this main (see `lib/session.ts`). Pages/actions use
+  `requireModule('prospecting')` + `isStaff(role)`; the three new
+  `/api/prospecting/**` routes (tick, events, run-status — needed for
+  client-side run polling, which doesn't fit the server-action model) do
+  their own `auth()` + `isStaff()` check, matching `/api/analytics/export`'s
+  existing precedent, since middleware excludes all of `/api`.
+- **Audit trail**: `recordAudit()` requires a non-null `org_id` FK. Since
+  this module has no org context, every audit call attributes the row to
+  the *acting staff member's own org* with an explicit `meta: {scope:
+  'global'}` marker — identical to `website-leads/actions.ts`'s existing
+  pattern for the same structural problem.
+- **`prospect_ai_calls`** (new table, didn't exist in the original build):
+  the original port's AI-cost logging piggybacked on a generic `agent_runs`
+  table that doesn't exist on this architecture. Rather than force a
+  dependency on an unrelated table, gave the module its own minimal
+  per-call usage log (`purpose`, `model`, tokens, `cost_eur`, `run_id`) —
+  `checkAiBudget()`/`getTodaySpendEur()` sum across it directly.
+- **Widened `prospect_send_result` enum**: the original build's `send_log`
+  table used a free-text `varchar` and the actual code referenced `bounce`
+  and `spam_complaint` values that a first-pass narrow enum
+  (`sent|blocked|failed`) missed — caught by TypeScript the moment
+  `health/thresholds.ts` and `outbound/mailbox-health.ts` were ported and
+  typechecked against the stricter enum. Fixed by widening the enum to all
+  five real values actually used in the codebase.
+- **`socials_json`/`AuditRaw`/`CreateRunParams`**: a few `jsonb` columns were
+  first typed too narrowly during the port (guessed shapes rather than
+  checked against the actual data written to them) — caught the same way,
+  by TypeScript refusing the insert once the real shape was ported over.
+  Fixed to match the real shapes (`ContactField[]` for socials, explicit
+  casts where a domain-specific interface is intentionally stored as opaque
+  JSON).
+
+## What ported mechanically vs. what needed real rework
+
+The entire `lib/leads-agent/**` tree (54 files — discovery, crawler,
+extraction, audit, scoring, AI prompts, orchestration, outreach, outbound,
+health, retention, suppression) is architecture-agnostic pure logic. The
+port was a scripted rename pass (table identifiers, `@/drizzle/schema` →
+`@/db/schema`, `@/lib/db` → `@/db`) followed by fixing what the compiler
+caught — not a rewrite. Two real bugs were introduced and caught by that
+same process, both worth naming since they'd have been silent otherwise:
+1. A word-boundary regex rename (`leads` → `prospectLeads`) also matched
+   inside the *path segment* `leads-agent`, silently corrupting every
+   internal `@/lib/leads-agent/*` import. Caught immediately by the first
+   typecheck (every file failed to resolve its own siblings) and reverted
+   with a second pass.
+2. The same rename corrupted a handful of **Dutch user-facing strings** and
+   **event-code string literals** that happened to contain the word "leads"
+   (e.g. an error message, an `EventCode` union member). These do NOT throw
+   type errors — a corrupted string is still a valid string. Caught only by
+   manually grepping every renamed identifier against comments/string
+   literals after the fact. Flagging this class of bug explicitly: a
+   scripted identifier rename across a codebase with embedded natural-language
+   strings needs a dedicated find pass for prose, not just a clean
+   `tsc --noEmit`.
+
+Everything under `app/(app)/prospecting/**`, `app/api/prospecting/**`, and
+`components/prospecting/**` is new, hand-written against this repo's real
+conventions (`requireModule`/`requireMutator`, `'use server'` actions files,
+`lib/queries/<module>.ts` data layer, `lib/nl.ts` copy, `lib/labels.ts`
+status→tone maps, the `card`/`field`/`btn-primary`/`btn-ghost`/`label`
+utility classes, `components/ui/{PageHeader,Tabs,Pill,EmptyState}`) — not a
+reskin of the old Tailwind-utility-class UI, which used a visually different
+design system (`bg-white`/`text-gray-900`/`rounded-lg` vs. this app's
+serif-display/mono-label token system).
+
+- **A real webpack bug caught only by `npm run build`, not `tsc`**:
+  `components/prospecting/LeadFilters.tsx` (a `'use client'` component)
+  imported a plain constant array from `lib/queries/prospecting.ts` — which
+  itself imports `@/db` (the `postgres` driver, Node-only). `tsc --noEmit`
+  saw no problem (both are just TypeScript); `next build`'s webpack pass
+  correctly refused to bundle `net`/`tls`/`fs`/`perf_hooks` into a client
+  chunk. Fixed by inlining the tiny constant directly in the client
+  component and importing only the `type` (erased at compile time, safe)
+  from `@/db/schema`. Worth remembering as a category: a clean `tsc` does
+  not guarantee a clean client bundle when a shared "constants" file also
+  happens to import a server-only module.
+- **Console polling redesigned, not just re-skinned**: the original run
+  console's start/cancel actions became `'use server'` actions
+  (`startRunAction`/`cancelRunAction` in `app/(app)/prospecting/actions.ts`)
+  instead of `fetch()` calls to bespoke API routes, matching this repo's
+  real mutation convention. The tick/events/status polling loop stayed as
+  three small API routes (`/api/prospecting/runs/[id]/{tick,events,route}`)
+  since repeated client-side polling doesn't fit the server-action model —
+  the same reasoning `/api/analytics/export` already established for "GET
+  called from inside the portal."
+- **Cron sweeper added, not in the original build's Vercel-targeted design**:
+  the original 11-phase build assumed Netlify (no cron infra referenced),
+  so run progress depended entirely on a browser tab polling. This repo
+  already has a real Vercel cron precedent (`/api/cron/weekly-digest`,
+  `CRON_SECRET` bearer auth, registered in `vercel.json`). Added
+  `/api/cron/prospecting-sweeper` (every 5 minutes) following that exact
+  pattern, so a run keeps moving even with no tab open — registered in
+  `vercel.json` alongside the existing cron.
+
+## Verification
+
+`npx tsc --noEmit` and `npm run build` both clean across the full port
+(schema, all `lib/leads-agent/**` modules, all new routes/pages/actions/
+components). **Not yet verified live against a real database** — see below.
+
+## Not done / open before this can go live
+
+- **No migration has been applied to any real database yet.** This
+  environment's `DATABASE_URL` points at the *old* architecture's database
+  (the one the original 11-phase build ran against by hand-written SQL) —
+  confirmed directly: attempting `db:migrate` against it fails immediately
+  on migration `0000` (`relation "audit_log" already exists`), because that
+  database still has the old schema's tables, not this repo's. Per this
+  file's own Phase 1 notes above, migrations 0000–0003 (the foundational
+  `organizations`/`users`/`agents`/`website-leads`/`analytics` schema) were
+  **also** never applied to a real production database — meaning this
+  entire architecture, prospecting included, is still pre-launch. Whoever
+  points `DATABASE_URL` at the real target database needs to run
+  `npm run db:migrate` once, which will apply 0000 through 0004 (this
+  port's migration) together, cleanly, on an empty database.
+- **Zero live verification** of the ported logic against real data —
+  everything here is typecheck+build verified, not run-and-observed, unlike
+  every phase of the original build (which was extensively live-tested
+  against real OSM/DNS/RDAP data and a real, if differently-shaped,
+  database). Once a real `DATABASE_URL` exists, re-run the same live checks
+  the original build already did (see the original branch's own decisions
+  log for the exact list) against this port.
+- **No `ANTHROPIC_API_KEY`** in this environment either — the AI layer
+  (sector classification, pain briefs, outreach drafting, call prep, reply
+  classification) has never been exercised against a real model response,
+  in either the original build or this port.
+- **CSV/JSON pack export** (`/api/agents/leads/packs/export` in the original
+  build) was not ported — no button in the new UI calls it, so it wasn't
+  rebuilt. Straightforward to add following the `/api/analytics/export`
+  pattern already in this repo if wanted.
+- **ICP editing** still has no UI (matches the original build's own
+  documented gap) — `saveConfigAction('icp', ...)` exists and works, but
+  nothing in `/prospecting/instellingen` calls it yet for the ICP section.

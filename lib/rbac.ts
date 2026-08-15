@@ -18,6 +18,7 @@ export const MODULES = [
   'settings',
   'website-leads',
   'analytics',
+  'prospecting',
 ] as const
 
 export type ModuleKey = (typeof MODULES)[number]
@@ -29,8 +30,12 @@ const ALL_MODULES = [...MODULES]
  * marketing website (candelaria-agency.netlify.app) — not any client's, and
  * not org-scoped in the schema. They must never appear for a client role,
  * regardless of what `ALL_MODULES` contains.
+ *
+ * `prospecting` is Candelaria's own outbound MKB lead-finding agent (the
+ * "Leads Agent") — unrelated to the client-facing `leads` module, which is
+ * each org's own CRM. Also not org-scoped, also staff-only.
  */
-const STAFF_ONLY_MODULES: readonly ModuleKey[] = ['website-leads', 'analytics']
+const STAFF_ONLY_MODULES: readonly ModuleKey[] = ['website-leads', 'analytics', 'prospecting']
 
 export const MODULE_ACCESS: Record<UserRole, readonly ModuleKey[]> = {
   // Candelaria staff — everything.

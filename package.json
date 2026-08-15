@@ -15,14 +15,18 @@
     "db:seed:phase2": "tsx --env-file=.env.local db/seed-phase2.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.69.0",
     "bcryptjs": "^3.0.3",
+    "cheerio": "^1.2.0",
     "drizzle-orm": "^0.45.2",
+    "libphonenumber-js": "^1.13.11",
     "next": "15.5.22",
     "next-auth": "^5.0.0-beta.32",
     "postgres": "^3.4.9",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "recharts": "^3.10.1",
+    "robots-parser": "^3.0.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {

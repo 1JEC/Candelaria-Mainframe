@@ -4,11 +4,14 @@ import type {
   ConversationSentiment,
   DeviceType,
   EscalationStatus,
+  IntegrationProvider,
+  IntegrationStatus,
   LeadStatus,
   ProspectLeadStatus,
   ProspectPriority,
   RequestPriority,
   RequestStatus,
+  UserRole,
 } from '@/db/schema'
 import { nl } from '@/lib/nl'
 
@@ -116,6 +119,36 @@ export const prospectRiskLevelMeta: Record<'laag' | 'verhoogd' | 'hoog', { label
   laag: { label: nl.prospecting.risk.levelLow, tone: 'success' },
   verhoogd: { label: nl.prospecting.risk.levelElevated, tone: 'warning' },
   hoog: { label: nl.prospecting.risk.levelHigh, tone: 'danger' },
+}
+
+export const integrationProviderLabel: Record<IntegrationProvider, string> = {
+  meta: 'Meta (Facebook & Instagram)',
+  google_ads: 'Google Ads',
+  google_search_console: 'Google Search Console',
+  google_analytics: 'Google Analytics',
+  linkedin: 'LinkedIn',
+  resend: 'Resend',
+  anthropic: 'Anthropic',
+}
+
+export const orgPlanLabel: Record<'starter' | 'growth' | 'scale', string> = {
+  starter: 'Starter',
+  growth: 'Growth',
+  scale: 'Scale',
+}
+
+/** 'admin' is included for display only (an existing Candelaria-staff row can appear in a user list) — never offered as an assignable option in the invite/role-change UI, see INVITABLE_ROLES. */
+export const userRoleLabel: Record<UserRole, string> = {
+  admin: 'Candelaria-beheerder',
+  client_manager: 'Beheerder',
+  client_viewer: 'Alleen-lezen',
+}
+
+export const integrationStatusMeta: Record<IntegrationStatus, { label: string; tone: Tone }> = {
+  not_connected: { label: nl.settings.integrations.statusNotConnected, tone: 'neutral' },
+  connected: { label: nl.settings.integrations.statusConnected, tone: 'success' },
+  expired: { label: nl.settings.integrations.statusExpired, tone: 'warning' },
+  error: { label: nl.settings.integrations.statusError, tone: 'danger' },
 }
 
 /** Channels arrive as free text from ingest, so this falls back to the raw value. */

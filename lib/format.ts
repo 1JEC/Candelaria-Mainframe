@@ -11,6 +11,15 @@ export const formatPercent = (fraction: number, digits = 0) =>
     maximumFractionDigits: digits,
   }).format(fraction)
 
+/** "€ 0,0142" — AI spend is often sub-cent per call, so this keeps four decimals instead of currency's usual two. */
+export const formatCurrency = (eur: number) =>
+  new Intl.NumberFormat(LOCALE, {
+    style: 'currency',
+    currency: 'EUR',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 4,
+  }).format(eur)
+
 export const formatDate = (d: Date | string) =>
   new Intl.DateTimeFormat(LOCALE, {
     day: 'numeric',

@@ -64,6 +64,13 @@
       "when": 1786810354892,
       "tag": "0008_special_mandrill",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1786821459446,
+      "tag": "0009_hot_archangel",
+      "breakpoints": true
     }
   ]
 }

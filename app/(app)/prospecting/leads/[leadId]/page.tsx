@@ -6,9 +6,30 @@ import { Pill } from '@/components/ui/Pill'
 import { LeadNotesForm } from '@/components/prospecting/LeadNotesForm'
 import { ForgetLeadButton } from '@/components/prospecting/ForgetLeadButton'
 import { getProspectLead } from '@/lib/queries/prospecting'
-import { prospectLeadStatusMeta, prospectPriorityMeta } from '@/lib/labels'
+import { prospectLeadStatusMeta, prospectPriorityMeta, prospectRiskLevelMeta } from '@/lib/labels'
 import { formatDateTime } from '@/lib/format'
 import { nl } from '@/lib/nl'
+
+interface RiskFactor {
+  code: string
+  labelNl: string
+  evidence: string
+  sourceUrl: string
+  points: number
+  axis: 'business' | 'engagement'
+  category: string
+}
+
+function riskFactorsAndUnknowns(riskJson: unknown): { factors: RiskFactor[]; unknowns: string[] } {
+  if (riskJson && typeof riskJson === 'object' && 'factors' in riskJson) {
+    const value = riskJson as { factors?: unknown; unknowns?: unknown }
+    return {
+      factors: Array.isArray(value.factors) ? (value.factors as RiskFactor[]) : [],
+      unknowns: Array.isArray(value.unknowns) ? (value.unknowns as string[]) : [],
+    }
+  }
+  return { factors: [], unknowns: [] }
+}
 
 export const dynamic = 'force-dynamic'
 
@@ -40,6 +61,16 @@ export default async function ProspectingLeadDetailPage({ params }: { params: Pr
           <Pill tone={statusMeta.tone}>{statusMeta.label}</Pill>
           {priorityMeta && <Pill tone={priorityMeta.tone}>Prioriteit {priorityMeta.label}</Pill>}
           <span className="font-mono text-caption text-muted">Score {lead.totalScore ?? 0} (fit {lead.fitScore ?? 0} / pain {lead.painScore ?? 0})</span>
+          {lead.businessRisk && (
+            <Pill tone={prospectRiskLevelMeta[lead.businessRisk].tone}>
+              Risico bedrijf: {prospectRiskLevelMeta[lead.businessRisk].label} ({lead.businessRiskScore})
+            </Pill>
+          )}
+          {lead.engagementRisk && (
+            <Pill tone={prospectRiskLevelMeta[lead.engagementRisk].tone}>
+              Risico samenwerking: {prospectRiskLevelMeta[lead.engagementRisk].label} ({lead.engagementRiskScore})
+            </Pill>
+          )}
         </div>
       </div>
 
@@ -93,6 +124,96 @@ export default async function ProspectingLeadDetailPage({ params }: { params: Pr
               </div>
             ))}
           </div>
+        )}
+      </section>
+
+      <section>
+        <h2 className="display text-h2 text-foreground">{nl.prospecting.leads.tabRisk}</h2>
+        {!lead.riskAssessedAt ? (
+          <p className="mt-3 text-body-sm text-muted">{nl.prospecting.risk.notAssessed}</p>
+        ) : (
+          (() => {
+            const { factors, unknowns } = riskFactorsAndUnknowns(lead.riskJson)
+            const businessFactors = factors.filter((f) => f.axis === 'business')
+            const engagementFactors = factors.filter((f) => f.axis === 'engagement')
+            return (
+              <div className="mt-3 space-y-6">
+                {lead.riskHeadlineNl && (
+                  <div className="card">
+                    <p className="text-body-sm text-foreground">{lead.riskHeadlineNl}</p>
+                    <p className="mt-1 text-caption text-muted">
+                      {nl.prospecting.risk.assessedAt} {formatDateTime(lead.riskAssessedAt)}
+                    </p>
+                  </div>
+                )}
+
+                <div>
+                  <h3 className="text-body-sm font-semibold text-foreground">{nl.prospecting.risk.businessTitle}</h3>
+                  <p className="mt-1 text-caption text-muted">{nl.prospecting.risk.businessSubtitle}</p>
+                  {businessFactors.length > 0 ? (
+                    <div className="mt-3 space-y-2">
+                      {businessFactors.map((f) => (
+                        <div key={f.code} className="card">
+                          <div className="flex items-start justify-between gap-4">
+                            <div>
+                              <p className="text-body-sm text-foreground">{f.labelNl}</p>
+                              <p className="mt-1 text-caption text-muted">{f.evidence}</p>
+                              {f.sourceUrl && (
+                                <a href={f.sourceUrl} target="_blank" rel="noreferrer" className="mt-1 inline-block text-caption text-flame hover:underline">
+                                  Bron →
+                                </a>
+                              )}
+                            </div>
+                            <span className="font-mono text-caption text-muted">+{f.points}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="mt-3 text-body-sm text-muted">{nl.prospecting.risk.noFactors}</p>
+                  )}
+                </div>
+
+                <div>
+                  <h3 className="text-body-sm font-semibold text-foreground">{nl.prospecting.risk.engagementTitle}</h3>
+                  <p className="mt-1 text-caption text-muted">{nl.prospecting.risk.engagementSubtitle}</p>
+                  {engagementFactors.length > 0 ? (
+                    <div className="mt-3 space-y-2">
+                      {engagementFactors.map((f) => (
+                        <div key={f.code} className="card">
+                          <div className="flex items-start justify-between gap-4">
+                            <div>
+                              <p className="text-body-sm text-foreground">{f.labelNl}</p>
+                              <p className="mt-1 text-caption text-muted">{f.evidence}</p>
+                              {f.sourceUrl && (
+                                <a href={f.sourceUrl} target="_blank" rel="noreferrer" className="mt-1 inline-block text-caption text-flame hover:underline">
+                                  Bron →
+                                </a>
+                              )}
+                            </div>
+                            <span className="font-mono text-caption text-muted">+{f.points}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="mt-3 text-body-sm text-muted">{nl.prospecting.risk.noFactors}</p>
+                  )}
+                </div>
+
+                {unknowns.length > 0 && (
+                  <div className="card">
+                    <p className="label">{nl.prospecting.risk.unknownsTitle}</p>
+                    <ul className="mt-2 list-inside list-disc space-y-1 text-body-sm text-muted">
+                      {unknowns.map((u, i) => (
+                        <li key={i}>{u}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )
+          })()
         )}
       </section>
 

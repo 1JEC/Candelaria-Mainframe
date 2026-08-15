@@ -112,6 +112,12 @@ export const prospectPriorityMeta: Record<ProspectPriority, { label: string; ton
   C: { label: 'C', tone: 'neutral' },
 }
 
+export const prospectRiskLevelMeta: Record<'laag' | 'verhoogd' | 'hoog', { label: string; tone: Tone }> = {
+  laag: { label: nl.prospecting.risk.levelLow, tone: 'success' },
+  verhoogd: { label: nl.prospecting.risk.levelElevated, tone: 'warning' },
+  hoog: { label: nl.prospecting.risk.levelHigh, tone: 'danger' },
+}
+
 /** Channels arrive as free text from ingest, so this falls back to the raw value. */
 export function channelLabel(channel: string): string {
   const map: Record<string, string> = {

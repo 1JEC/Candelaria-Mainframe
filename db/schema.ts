@@ -566,6 +566,12 @@ export const prospectLeadStatus = pgEnum('prospect_lead_status', [
 
 export const prospectPriority = pgEnum('prospect_priority', ['A', 'B', 'C'])
 
+// Two independent axes (see lib/leads-agent/risk): businessRisk is what the
+// prospect is exposed to — the honest reason to reach out. engagementRisk is
+// what taking them on would cost us — internal triage only, never shown to
+// the prospect. Both use the same three levels but must never be conflated.
+export const prospectRiskLevel = pgEnum('prospect_risk_level', ['laag', 'verhoogd', 'hoog'])
+
 export const prospectRunStatus = pgEnum('prospect_run_status', [
   'queued',
   'running',
@@ -596,6 +602,7 @@ export const prospectEventLevel = pgEnum('prospect_event_level', [
 export const prospectConfigKey = pgEnum('prospect_config_key', [
   'icp',
   'rubric',
+  'risk',
   'thresholds',
   'crawl',
   'sources',
@@ -679,6 +686,17 @@ export const prospectLeads = pgTable(
     firstSeenAt: timestamp('first_seen_at', { withTimezone: true }),
     lastSeenAt: timestamp('last_seen_at', { withTimezone: true }),
     auditedAt: timestamp('audited_at', { withTimezone: true }),
+    // ---- Risk assessment (two axes, see lib/leads-agent/risk) ----
+    // Levels/scores are columns because the leads list filters and sorts on
+    // them; the factor list and "what we could not measure" notes live in
+    // riskJson, same reasoning as prospectAudits.rawJson — always read whole.
+    businessRisk: prospectRiskLevel('business_risk'),
+    businessRiskScore: integer('business_risk_score'),
+    engagementRisk: prospectRiskLevel('engagement_risk'),
+    engagementRiskScore: integer('engagement_risk_score'),
+    riskHeadlineNl: text('risk_headline_nl'),
+    riskJson: jsonb('risk_json').$type<{ factors: unknown[]; unknowns: string[] }>(),
+    riskAssessedAt: timestamp('risk_assessed_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -691,6 +709,7 @@ export const prospectLeads = pgTable(
     uniqueIndex('prospect_leads_domain_idx').on(t.registrableDomain),
     index('prospect_leads_status_idx').on(t.status),
     index('prospect_leads_total_score_idx').on(t.totalScore),
+    index('prospect_leads_business_risk_idx').on(t.businessRisk),
   ],
 )
 

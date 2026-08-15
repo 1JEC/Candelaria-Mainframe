@@ -1,0 +1,1 @@
+ALTER TYPE "public"."prospect_config_key" ADD VALUE 'risk' BEFORE 'thresholds';

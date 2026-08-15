@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 
 import { startRunAction, cancelRunAction } from '@/app/(app)/prospecting/actions'
+import { formatDuration } from '@/lib/format'
 import { nl } from '@/lib/nl'
 
 interface ProspectEvent {
@@ -27,17 +28,21 @@ export function ConsoleRunForm({
   cities,
   initialRunId,
   initialStatus,
+  initialStartedAt,
 }: {
   sectors: readonly string[]
   cities: readonly string[]
   initialRunId: string | null
   initialStatus: string | null
+  initialStartedAt: Date | string | null
 }) {
   const [city, setCity] = useState(cities[0] ?? '')
   const [selectedSectors, setSelectedSectors] = useState<string[]>([])
   const [limit, setLimit] = useState(25)
   const [runId, setRunId] = useState<string | null>(initialRunId)
   const [status, setStatus] = useState<string | null>(initialStatus)
+  const [startedAt, setStartedAt] = useState<Date | null>(initialStartedAt ? new Date(initialStartedAt) : null)
+  const [elapsedSeconds, setElapsedSeconds] = useState(0)
   const [events, setEvents] = useState<ProspectEvent[]>([])
   const [taskCounts, setTaskCounts] = useState<Record<string, number>>({})
   const [error, setError] = useState<string | null>(null)
@@ -60,6 +65,16 @@ export function ConsoleRunForm({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Ticks locally once a second — no need to round-trip to the server just
+  // to advance a clock the client can compute from startedAt itself.
+  useEffect(() => {
+    if (!startedAt || (status !== 'running' && status !== 'queued')) return
+    const tick = () => setElapsedSeconds((Date.now() - startedAt.getTime()) / 1000)
+    tick()
+    const interval = setInterval(tick, 1000)
+    return () => clearInterval(interval)
+  }, [startedAt, status])
+
   function toggleSector(sector: string) {
     setSelectedSectors((prev) => (prev.includes(sector) ? prev.filter((s) => s !== sector) : [...prev, sector]))
   }
@@ -71,6 +86,8 @@ export function ConsoleRunForm({
       const { runId: newRunId } = await startRunAction({ city, sectors: selectedSectors, limit })
       setRunId(newRunId)
       setStatus('running')
+      setStartedAt(new Date())
+      setElapsedSeconds(0)
       setEvents([])
       setTaskCounts({})
       cursorRef.current = 0
@@ -195,7 +212,8 @@ export function ConsoleRunForm({
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <p className="text-body-sm text-foreground">
-              {status === 'running' ? nl.prospecting.console.running : nl.prospecting.console.queued} — {done} klaar, {claimed} bezig, {pending} in wachtrij
+              {status === 'running' ? nl.prospecting.console.running : nl.prospecting.console.queued}
+              {startedAt && ` — ${formatDuration(elapsedSeconds)}`} — {done} klaar, {claimed} bezig, {pending} in wachtrij
               {failed > 0 ? `, ${failed} mislukt` : ''}
             </p>
             <button

@@ -35,6 +35,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             name: users.name,
             role: users.role,
             passwordHash: users.passwordHash,
+            isActive: users.isActive,
             orgId: users.orgId,
             orgName: organizations.name,
             orgIsDemo: organizations.isDemo,
@@ -51,7 +52,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           '$2b$12$invalidinvalidinvalidinvalidinvalidinvalidinvalidinvaliduO'
         const ok = await bcrypt.compare(parsed.data.password, hash)
 
-        if (!row || !ok) return null
+        // Checked after the bcrypt.compare, not before — bailing out early
+        // for a deactivated account would make the response measurably
+        // faster than a wrong-password one, leaking which emails are
+        // deactivated to a timing attacker.
+        if (!row || !ok || !row.isActive) return null
 
         await db
           .update(users)

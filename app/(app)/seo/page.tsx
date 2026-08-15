@@ -3,10 +3,29 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { Pill } from '@/components/ui/Pill'
 import { WebsiteUrlForm } from '@/components/seo/WebsiteUrlForm'
 import { RunAuditButton } from '@/components/seo/RunAuditButton'
-import { getOrgWebsite, getLatestSeoAudit } from '@/lib/queries/seo'
+import { getOrgWebsite, getLatestSeoAudit, listSeoAuditHistory } from '@/lib/queries/seo'
+import type { AuditRaw } from '@/lib/leads-agent/audit'
 import { formatDateTime } from '@/lib/format'
 import { nl } from '@/lib/nl'
 import { requireModule } from '@/lib/session'
+
+/** Same 11 checks the page already renders individually — reduced to a pass count so a history list reads as a trend, not a wall of repeated checklists. */
+function passedCheckCount(raw: AuditRaw): { passed: number; total: number } {
+  const checks = [
+    raw.httpsValid,
+    raw.mobileViewport,
+    raw.titlePresent,
+    raw.metaDescriptionPresent,
+    raw.h1Present,
+    raw.htmlLangPresent,
+    raw.analyticsDetected.length > 0,
+    raw.schemaOrgTypes.length > 0,
+    raw.hasContactForm,
+    raw.imagesWithoutAlt === 0,
+    raw.brokenLinksSample.length === 0,
+  ]
+  return { passed: checks.filter(Boolean).length, total: checks.length }
+}
 
 export const dynamic = 'force-dynamic'
 
@@ -24,7 +43,14 @@ function Check({ label, ok, detail }: { label: string; ok: boolean; detail?: str
 
 export default async function SeoPage() {
   const user = await requireModule('seo')
-  const [websiteUrl, latestAudit] = await Promise.all([getOrgWebsite(user.orgId), getLatestSeoAudit(user.orgId)])
+  const [websiteUrl, latestAudit, history] = await Promise.all([
+    getOrgWebsite(user.orgId),
+    getLatestSeoAudit(user.orgId),
+    listSeoAuditHistory(user.orgId),
+  ])
+  // The latest audit is already shown in full detail above — the history
+  // list is everything before it, so nothing appears twice.
+  const previousAudits = history.filter((a) => a.id !== latestAudit?.id)
 
   return (
     <>
@@ -72,6 +98,23 @@ export default async function SeoPage() {
             </div>
           )}
         </div>
+
+        {previousAudits.length > 0 && (
+          <div className="card">
+            <p className="label">Audithistorie</p>
+            <div className="mt-4 space-y-2">
+              {previousAudits.map((audit) => {
+                const { passed, total } = passedCheckCount(audit.raw)
+                return (
+                  <div key={audit.id} className="flex items-center justify-between border-b border-border py-2 last:border-0">
+                    <span className="text-body-sm text-foreground">{formatDateTime(audit.createdAt)}</span>
+                    <span className="font-mono text-caption text-muted">{passed} / {total} controles OK</span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
       </div>
     </>
   )

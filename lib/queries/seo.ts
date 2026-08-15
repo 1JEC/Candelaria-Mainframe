@@ -16,5 +16,6 @@ export async function getLatestSeoAudit(orgId: string) {
 }
 
 export async function listSeoAuditHistory(orgId: string, limit = 10) {
-  return db.select({ id: seoAudits.id, createdAt: seoAudits.createdAt }).from(seoAudits).where(eq(seoAudits.orgId, orgId)).orderBy(desc(seoAudits.createdAt)).limit(limit)
+  const rows = await db.select().from(seoAudits).where(eq(seoAudits.orgId, orgId)).orderBy(desc(seoAudits.createdAt)).limit(limit)
+  return rows.map((row) => ({ ...row, raw: row.rawJson as unknown as AuditRaw }))
 }

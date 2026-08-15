@@ -163,3 +163,13 @@ export function estimateCost(model: string, inputTokens: number, outputTokens: n
   if (!pricing) return 0
   return (inputTokens / 1_000_000) * pricing.input + (outputTokens / 1_000_000) * pricing.output
 }
+
+/**
+ * Distinguishes "genuinely free" (a free-tier or local model) from "we simply
+ * have no price for this" — estimateCost() alone can't, since both return 0.
+ * A caller showing cost to a human needs that distinction: reporting €0,00
+ * for an unpriced proprietary model would read as a measurement, not a gap.
+ */
+export function hasKnownPricing(model: string): boolean {
+  return model in PRICING
+}

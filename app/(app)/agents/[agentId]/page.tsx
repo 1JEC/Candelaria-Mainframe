@@ -2,13 +2,16 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
 import { DonutChart } from '@/components/charts/DonutChart'
+import { EditAgentForm } from '@/components/agents/EditAgentForm'
 import { TopicBars } from '@/components/charts/TopicBars'
 import { VolumeChart } from '@/components/charts/VolumeChart'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Pill } from '@/components/ui/Pill'
 import { chartTheme } from '@/lib/chart-theme'
+import { estimateCost, hasKnownPricing } from '@/lib/agents/providers'
 import {
   formatCompact,
+  formatCurrency,
   formatDateTime,
   formatDuration,
   formatNumber,
@@ -22,6 +25,7 @@ import {
   getVolumeSeries,
   type VolumeBucket,
 } from '@/lib/queries/agents'
+import { canMutate } from '@/lib/rbac'
 import { requireModule } from '@/lib/session'
 
 export const dynamic = 'force-dynamic'
@@ -72,6 +76,12 @@ export default async function AgentDetailPage({
 
   const status = agentStatusMeta[agent.status] ?? agentStatusMeta.paused
   const tokenTotal = stats.tokenInput + stats.tokenOutput
+  const knownPricing = agent.model ? hasKnownPricing(agent.model) : false
+  // USD list price treated as EUR (both currencies trade close to parity as
+  // of writing) — a soft estimate for internal cost awareness, not an
+  // invoice-accurate figure. Matches the same convention as Prospecting's
+  // own AI_DAILY_BUDGET_EUR guard.
+  const estimatedCostEur = knownPricing ? estimateCost(agent.model!, stats.tokenInput, stats.tokenOutput) : null
 
   return (
     <div className="space-y-6">
@@ -97,6 +107,10 @@ export default async function AgentDetailPage({
           {agent.isDemo && <Pill tone="brand">{nl.common.demoBadge}</Pill>}
         </div>
       </div>
+
+      {canMutate(user.role) && (
+        <EditAgentForm agentId={agent.id} initialName={agent.name} initialModel={agent.model} initialStatus={agent.status} />
+      )}
 
       <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
         <div className="card">
@@ -251,6 +265,12 @@ export default async function AgentDetailPage({
                 </dt>
                 <dd className="display text-h3 text-foreground">
                   {formatCompact(tokenTotal)}
+                </dd>
+              </div>
+              <div className="flex items-baseline justify-between border-t border-border pt-4 text-body-sm">
+                <dt className="text-muted">{nl.agents.detail.estimatedCost}</dt>
+                <dd className="font-mono text-caption text-foreground">
+                  {estimatedCostEur === null ? nl.agents.detail.costUnknownModel : formatCurrency(estimatedCostEur)}
                 </dd>
               </div>
             </dl>

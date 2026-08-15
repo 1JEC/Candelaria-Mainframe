@@ -82,6 +82,9 @@ export const users = pgTable(
       withTimezone: true,
     }),
     lastLogin: timestamp('last_login', { withTimezone: true }),
+    // A deactivated user keeps every historical reference intact (audit_log,
+    // requests, agents.createdBy-style FKs) — soft, not a delete.
+    isActive: boolean('is_active').notNull().default(true),
     isDemo: boolean('is_demo').notNull().default(false),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
@@ -1077,6 +1080,10 @@ export type ChangelogEntry = typeof changelogEntries.$inferSelect
 export type Lead = typeof leads.$inferSelect
 export type Pageview = typeof pageviews.$inferSelect
 
+export type AgentType = (typeof agentType.enumValues)[number]
+export type AgentStatus = (typeof agentStatus.enumValues)[number]
+export type IntegrationProvider = (typeof integrationProvider.enumValues)[number]
+export type IntegrationStatus = (typeof integrationStatus.enumValues)[number]
 export type UserRole = (typeof userRole.enumValues)[number]
 export type RequestStatus = (typeof requestStatus.enumValues)[number]
 export type RequestPriority = (typeof requestPriority.enumValues)[number]

@@ -4,7 +4,8 @@ import { runDoctorChecks } from '@/lib/leads-agent/doctor'
 import { DEFAULT_ICP } from '@/lib/leads-agent/config'
 import { getActiveRun, getRecentRuns } from '@/lib/queries/prospecting'
 import { ConsoleRunForm } from '@/components/prospecting/ConsoleRunForm'
-import { formatDateTime, formatDuration } from '@/lib/format'
+import { checkAiBudget } from '@/lib/agents/anthropic-client'
+import { formatCurrency, formatDateTime, formatDuration } from '@/lib/format'
 import { nl } from '@/lib/nl'
 
 /** Elapsed time for a run: finished runs get a fixed duration, an active run's duration keeps growing until the next page load — that's a fair reading of "how long has it worked" for a server-rendered list. */
@@ -24,10 +25,28 @@ const STATUS_TONE: Record<string, string> = {
 }
 
 export default async function ProspectingConsolePage() {
-  const [report, activeRun, recentRuns] = await Promise.all([runDoctorChecks(), getActiveRun(), getRecentRuns()])
+  const [report, activeRun, recentRuns, budget] = await Promise.all([
+    runDoctorChecks(),
+    getActiveRun(),
+    getRecentRuns(),
+    checkAiBudget(),
+  ])
 
   return (
     <div className="space-y-6">
+      <div className="card flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <p className="label">AI-budget vandaag</p>
+          <p className="display mt-2 text-kpi text-foreground">
+            {formatCurrency(budget.spentEur)}
+            <span className="ml-2 text-body-sm font-normal text-muted">van {formatCurrency(budget.capEur)}</span>
+          </p>
+        </div>
+        <span className={`font-mono text-label uppercase tracking-label ${budget.ok ? 'text-moss' : 'text-flame'}`}>
+          {budget.ok ? 'Binnen budget' : 'Plafond bereikt — AI-stappen pauzeren'}
+        </span>
+      </div>
+
       <ConsoleRunForm
         sectors={DEFAULT_ICP.sectors}
         cities={DEFAULT_ICP.cities}
@@ -67,12 +86,14 @@ export default async function ProspectingConsolePage() {
           <div className="mt-4 space-y-2">
             {recentRuns.map((run) => {
               const duration = formatDuration(runDurationSeconds(run.startedAt, run.finishedAt))
+              const cost = Number(run.aiCostEur ?? 0)
               return (
                 <div key={run.id} className="flex items-center justify-between border-b border-border py-2 last:border-0">
                   <span className="text-body-sm text-foreground">{run.label}</span>
                   <span className="text-caption text-muted">
                     {run.status} — {formatDateTime(run.startedAt)}
                     {duration && ` — ${duration}${run.status === 'running' ? ' (bezig)' : ''}`}
+                    {cost > 0 && ` — ${formatCurrency(cost)} AI-kosten`}
                   </span>
                 </div>
               )

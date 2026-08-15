@@ -1,11 +1,13 @@
 import Link from 'next/link'
 
+import { NewAgentFormSection } from '@/components/agents/NewAgentFormSection'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Pill, StatusDot } from '@/components/ui/Pill'
 import { formatDuration, formatNumber, formatPercent } from '@/lib/format'
 import { agentStatusMeta, agentTypeLabel } from '@/lib/labels'
 import { nl } from '@/lib/nl'
 import { getAgentSummaries, type AgentSummary } from '@/lib/queries/agents'
+import { canMutate } from '@/lib/rbac'
 import { requireModule } from '@/lib/session'
 
 export const dynamic = 'force-dynamic'
@@ -69,14 +71,20 @@ const AgentCard = ({ agent }: { agent: AgentSummary }) => {
 export default async function AgentsOverviewPage() {
   const user = await requireModule('agents')
   const summaries = await getAgentSummaries(user.orgId)
-
-  if (summaries.length === 0) return <EmptyState />
+  const mutator = canMutate(user.role)
 
   return (
-    <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
-      {summaries.map((agent) => (
-        <AgentCard key={agent.id} agent={agent} />
-      ))}
+    <div className="space-y-6">
+      {mutator && <NewAgentFormSection />}
+      {summaries.length === 0 ? (
+        <EmptyState />
+      ) : (
+        <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-3">
+          {summaries.map((agent) => (
+            <AgentCard key={agent.id} agent={agent} />
+          ))}
+        </div>
+      )}
     </div>
   )
 }

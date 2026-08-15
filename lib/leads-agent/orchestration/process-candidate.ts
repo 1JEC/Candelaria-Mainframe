@@ -6,6 +6,8 @@ import { mergeContactExtractions, toContactFields, type ExtractedContacts } from
 import { runAudit, type AuditRaw } from "@/lib/leads-agent/audit";
 import { scoreLead } from "@/lib/leads-agent/scoring";
 import type { ScoringInput } from "@/lib/leads-agent/scoring/types";
+import { assessRisk } from "@/lib/leads-agent/risk";
+import { runDnsChecks, type DnsCheckResult } from "@/lib/leads-agent/health/dns-check";
 import { generatePainBrief, generateOutreachDrafts } from "@/lib/leads-agent/ai";
 import { assembleOutreachPack, validatePackContent } from "@/lib/leads-agent/outreach/assemble";
 import { MODEL_SMART } from "@/lib/agents/anthropic-client";
@@ -47,6 +49,14 @@ export async function processCandidateTask(runId: string, taskId: string, target
       messageNl: `${crawl.pages.length} pagina('s) opgehaald, ${crawl.skipped.length} overgeslagen.`,
     });
 
+    // A retried task (up to 3 attempts, see task-queue.ts's markTaskFailed)
+    // re-runs this whole function against the same leadId. Without clearing
+    // prior contacts/signals first, a retry that fails AFTER this insert
+    // (e.g. a rate-limited AI call further down) duplicates every contact
+    // field and evidence row on each attempt.
+    await db.delete(leadContacts).where(eq(leadContacts.leadId, leadId));
+    await db.delete(leadSignals).where(eq(leadSignals.leadId, leadId));
+
     contacts = mergeContactExtractions(crawl.pages);
     const contactFields = toContactFields(contacts);
     if (contactFields.length > 0) {
@@ -83,6 +93,22 @@ export async function processCandidateTask(runId: string, taskId: string, target
   };
   const result = scoreLead(scoringInput);
 
+  // Risk runs on the same already-measured inputs as scoring, plus a DNS
+  // lookup on the prospect's own domain when there is one. Only MX/SPF/DMARC
+  // feed risk factors — DKIM is skipped deliberately: we don't know a
+  // prospect's selector, so a non-resolving "default" proves nothing.
+  const dns = candidate.registrableDomain ? await safeDnsChecks(candidate.registrableDomain) : undefined;
+  const risk = assessRisk({
+    sector: candidate.sector,
+    discoverySourceUrl: candidate.sourceUrl,
+    hasWebsite: Boolean(candidate.website),
+    homepageUrl,
+    audit,
+    contacts,
+    crawledPageUrls,
+    dns,
+  });
+
   if (result.signals.length > 0) {
     await db.insert(leadSignals).values(
       result.signals.map((s) => ({ id: crypto.randomUUID(), leadId, code: s.code, labelNl: s.labelNl, evidence: s.evidence, sourceUrl: s.sourceUrl, points: s.points }))
@@ -105,6 +131,13 @@ export async function processCandidateTask(runId: string, taskId: string, target
       phoneE164: contacts.phoneE164?.value ?? null,
       contactFormUrl: contacts.contactFormUrl?.value ?? null,
       socialsJson: contacts.socials.length > 0 ? contacts.socials : null,
+      businessRisk: risk.businessRisk,
+      businessRiskScore: risk.businessRiskScore,
+      engagementRisk: risk.engagementRisk,
+      engagementRiskScore: risk.engagementRiskScore,
+      riskHeadlineNl: risk.headlineNl,
+      riskJson: { factors: risk.factors, unknowns: risk.unknowns },
+      riskAssessedAt: now,
       updatedAt: now,
     })
     .where(eq(leads.id, leadId));
@@ -120,6 +153,13 @@ export async function processCandidateTask(runId: string, taskId: string, target
     runId,
     taskId,
     leadId,
+    code: "risk.assessed",
+    messageNl: `Risico bedrijf ${risk.businessRisk} (${risk.businessRiskScore}), risico samenwerking ${risk.engagementRisk} (${risk.engagementRiskScore}) — ${risk.headlineNl}`,
+  });
+  await emitEvent({
+    runId,
+    taskId,
+    leadId,
     code: "decision",
     messageNl: result.qualified ? `Gekwalificeerd — prioriteit ${result.priority}.` : result.disqualifiedReason ?? "Niet gekwalificeerd (score onder de drempel).",
   });
@@ -129,6 +169,19 @@ export async function processCandidateTask(runId: string, taskId: string, target
   }
 
   return { leadId, qualified: result.qualified, totalScore: result.totalScore };
+}
+
+/**
+ * A DNS lookup must never take a run down, and a failed lookup must never
+ * read as "no mail risk found". Returning undefined pushes it into the
+ * assessment's `unknowns` instead of silently scoring as a pass.
+ */
+async function safeDnsChecks(domain: string): Promise<DnsCheckResult[] | undefined> {
+  try {
+    return await runDnsChecks(domain);
+  } catch {
+    return undefined;
+  }
 }
 
 async function upsertLead(candidate: DiscoveredCandidate, now: Date): Promise<string> {

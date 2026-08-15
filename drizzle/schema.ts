@@ -335,12 +335,24 @@ export const leads = pgTable(
     firstSeenAt: timestamp("first_seen_at"),
     lastSeenAt: timestamp("last_seen_at"),
     auditedAt: timestamp("audited_at"),
+    // ---- Risk assessment (two axes, see lib/leads-agent/risk) ----
+    // The levels and scores are columns because they're filtered and sorted
+    // on; the factors and unknowns live in risk_json for the same reason
+    // lead_audits keeps raw_json — they're always read as a whole.
+    businessRisk: varchar("business_risk", { length: 10 }), // laag|verhoogd|hoog
+    businessRiskScore: integer("business_risk_score"),
+    engagementRisk: varchar("engagement_risk", { length: 10 }), // laag|verhoogd|hoog
+    engagementRiskScore: integer("engagement_risk_score"),
+    riskHeadlineNl: text("risk_headline_nl"),
+    riskJson: jsonb("risk_json"),
+    riskAssessedAt: timestamp("risk_assessed_at"),
   },
   (table) => ({
     emailUnique: unique("leads_email_unique").on(table.email),
     statusIdx: index("leads_status_idx").on(table.status),
     scoreIdx: index("leads_score_idx").on(table.score),
     totalScoreIdx: index("leads_total_score_idx").on(table.totalScore),
+    businessRiskIdx: index("leads_business_risk_idx").on(table.businessRisk),
   })
 );
 

@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import { suppression, leadRuns } from "@/drizzle/schema";
 import { sql } from "drizzle-orm";
-import { checkAiBudget } from "@/lib/agents/anthropic-client";
+import { checkAiBudget, describeProvider, isAiConfigured } from "@/lib/agents/anthropic-client";
 
 export type CheckStatus = "green" | "amber" | "red";
 export interface DoctorCheck {
@@ -16,8 +16,10 @@ export interface DoctorReport {
 }
 
 const REQUIRED_ENV = ["DATABASE_URL"];
+// ANTHROPIC_API_KEY is deliberately absent: it is only one of several valid
+// backends now, so its presence says nothing. The ai_provider check below
+// reports what is actually configured instead.
 const OPTIONAL_ENV = [
-  "ANTHROPIC_API_KEY",
   "GOOGLE_PLACES_API_KEY",
   "KVK_API_KEY",
   "PAGESPEED_API_KEY",
@@ -54,6 +56,14 @@ export async function runDoctorChecks(): Promise<DoctorReport> {
       detail: process.env[key] ? "Ingesteld." : "Ontbreekt — bijbehorende functie schakelt zichzelf uit.",
     });
   }
+
+  checks.push({
+    name: "ai_provider",
+    status: isAiConfigured() ? "green" : "amber",
+    detail: isAiConfigured()
+      ? describeProvider()
+      : `Geen AI-backend geconfigureerd (${describeProvider()}) — de pipeline blijft draaien, alleen de concepten worden niet gegenereerd.`,
+  });
 
   try {
     const budget = await checkAiBudget();

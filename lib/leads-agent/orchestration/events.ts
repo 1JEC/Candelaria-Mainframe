@@ -19,6 +19,7 @@ export type EventCode =
   | "ai.request"
   | "ai.response"
   | "score.computed"
+  | "risk.assessed"
   | "decision"
   | "pack.generated"
   | "ai.ungrounded_claim"

@@ -5,6 +5,8 @@ import type {
   DeviceType,
   EscalationStatus,
   LeadStatus,
+  ProspectLeadStatus,
+  ProspectPriority,
   RequestPriority,
   RequestStatus,
 } from '@/db/schema'
@@ -91,6 +93,23 @@ export const deviceTypeLabel: Record<DeviceType, string> = {
   mobile: nl.analytics.deviceType.mobile,
   tablet: nl.analytics.deviceType.tablet,
   desktop: nl.analytics.deviceType.desktop,
+}
+
+export const prospectLeadStatusMeta: Record<ProspectLeadStatus, { label: string; tone: Tone }> = {
+  new: { label: nl.prospecting.status.new, tone: 'neutral' },
+  contacted: { label: nl.prospecting.status.contacted, tone: 'warning' },
+  qualified: { label: nl.prospecting.status.qualified, tone: 'accent' },
+  packed: { label: nl.prospecting.status.packed, tone: 'brand' },
+  replied: { label: nl.prospecting.status.replied, tone: 'success' },
+  won: { label: nl.prospecting.status.won, tone: 'success' },
+  lost: { label: nl.prospecting.status.lost, tone: 'neutral' },
+  suppressed: { label: nl.prospecting.status.suppressed, tone: 'danger' },
+}
+
+export const prospectPriorityMeta: Record<ProspectPriority, { label: string; tone: Tone }> = {
+  A: { label: 'A', tone: 'danger' },
+  B: { label: 'B', tone: 'warning' },
+  C: { label: 'C', tone: 'neutral' },
 }
 
 /** Channels arrive as free text from ingest, so this falls back to the raw value. */

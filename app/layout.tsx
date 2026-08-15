@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Inter, Newsreader, JetBrains_Mono } from 'next/font/google'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 import './globals.css'
 
 /* Families and weights mirror brand-tokens.json → font.*
@@ -42,7 +43,10 @@ export default function RootLayout({
       lang="nl"
       className={`${inter.variable} ${newsreader.variable} ${mono.variable}`}
     >
-      <body>{children}</body>
+      <body>
+        {children}
+        <SpeedInsights />
+      </body>
     </html>
   )
 }
